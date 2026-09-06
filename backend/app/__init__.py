@@ -170,7 +170,20 @@ def _seed_initial_data(db):
         ),
     )
 
-    db.session.add_all([admin_role, teacher_role, viewer_role])
+    # Default role for public self-serve registration: full paper generation
+    # across every subject/question, but no question-bank editing rights.
+    user_role = Role(
+        name='user',
+        description='Open self-serve account — generate/download papers, no bank editing',
+        permissions=_perms(
+            'subjects.read', 'questions.read',
+            'papers.create', 'papers.read', 'papers.update',
+            'papers.delete', 'papers.download_pdf',
+            'users.read_self',
+        ),
+    )
+
+    db.session.add_all([admin_role, teacher_role, viewer_role, user_role])
 
     # ── Default subjects ───────────────────────────────────────────
     subjects_data = [

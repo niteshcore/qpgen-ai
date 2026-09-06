@@ -69,9 +69,10 @@ def create_paper():
     if not db.session.get(Subject, data['subject_id']):
         return jsonify({'error': 'Subject not found'}), 404
 
-    # Security: Verify teacher has access to this subject
+    # Security: legacy 'teacher' accounts are still scoped to their assigned
+    # subjects; the open 'user' role and 'admin' can access every subject.
     user = get_current_user()
-    if not user.has_role('admin'):
+    if user.has_role('teacher') and not user.has_role('admin'):
         subject_ids = [s.id for s in user.subjects]
         if data['subject_id'] not in subject_ids:
             return jsonify({'error': 'Forbidden', 'message': 'You are not assigned to this subject'}), 403
@@ -139,7 +140,7 @@ def manual_generate_paper():
     if not db.session.get(Subject, data['subject_id']):
         return jsonify({'error': 'Subject not found'}), 404
 
-    if not user.has_role('admin'):
+    if user.has_role('teacher') and not user.has_role('admin'):
         subject_ids = [s.id for s in user.subjects]
         if data['subject_id'] not in subject_ids:
             return jsonify({'error': 'Forbidden', 'message': 'You are not assigned to this subject'}), 403
@@ -267,7 +268,7 @@ def generate_ai_syllabus_paper():
         return jsonify({'error': 'Subject not found'}), 404
 
     # Security: Verify teacher has access to this subject
-    if not user.has_role('admin'):
+    if user.has_role('teacher') and not user.has_role('admin'):
         subject_ids = [s.id for s in user.subjects]
         if data['subject_id'] not in subject_ids:
             return jsonify({'error': 'Forbidden', 'message': 'You are not assigned to this subject'}), 403

@@ -28,7 +28,7 @@
             <a href="dashboard.html" class="nav-item active">
                 <span class="nav-icon">▤</span> Dashboard
             </a>
-            <a href="questions.html" class="nav-item">
+            <a href="questions.html" class="nav-item" id="qbNavItem" style="display:none;">
                 <span class="nav-icon">⚄</span> Question Bank
             </a>
             <a href="generate.html" class="nav-item">
@@ -134,6 +134,7 @@
 
         if (user.roles && user.roles.includes('admin')) {
             document.getElementById('adminArea').style.display = 'block';
+            document.getElementById('qbNavItem').style.display = 'flex';
         }
 
         const date = new Date();

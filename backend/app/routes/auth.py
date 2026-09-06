@@ -27,9 +27,11 @@ def register():
         email=data['email'],
     )
     user.set_password(data['password'])
-    teacher_role = Role.query.filter_by(name='teacher').first()
-    if teacher_role:
-        user.roles = [teacher_role]
+    # Every self-registered account gets the open 'user' role — full access to
+    # browse subjects/questions and generate/download papers, no bank editing.
+    default_role = Role.query.filter_by(name='user').first()
+    if default_role:
+        user.roles = [default_role]
 
     db.session.add(user)
     db.session.commit()

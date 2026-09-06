@@ -337,7 +337,7 @@ def get_my_requests():
 
 
 @teacher_bp.route('/profile', methods=['GET'])
-@require_any_role('teacher', 'admin')
+@require_any_role('teacher', 'admin', 'user')
 def get_profile():
     """Get extended profile for the current teacher."""
     from app.models.paper import Paper
@@ -362,7 +362,7 @@ def get_profile():
 
 
 @teacher_bp.route('/support', methods=['POST'])
-@require_role('teacher')
+@require_any_role('teacher', 'admin', 'user')
 def submit_support_request():
     """Teacher submits a help/support message to admin."""
     from app.models.support_message import SupportMessage

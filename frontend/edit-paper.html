@@ -277,7 +277,7 @@
             <a href="dashboard.html" class="nav-item">
                 <span class="nav-icon">▤</span> Dashboard
             </a>
-            <a href="questions.html" class="nav-item">
+            <a href="questions.html" class="nav-item" id="qbNavItem" style="display:none;">
                 <span class="nav-icon">⚄</span> Question Bank
             </a>
             <a href="generate.html" class="nav-item">
@@ -369,8 +369,9 @@
                 allQuestions = qD.questions || [];
 
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
-                // sidebar data
-                // handled by style commonalities or inline if needed
+                if (user.roles && user.roles.includes('admin')) {
+                    document.getElementById('qbNavItem').style.display = 'flex';
+                }
 
                 render();
             } catch (e) { alert('Archival Link Lost'); }

@@ -233,7 +233,7 @@
             <a href="dashboard.html" class="nav-item">
                 <span class="nav-icon">▤</span> Dashboard
             </a>
-            <a href="questions.html" class="nav-item">
+            <a href="questions.html" class="nav-item" id="qbNavItem" style="display:none;">
                 <span class="nav-icon">⚄</span> Question Bank
             </a>
             <a href="generate.html" class="nav-item">
@@ -291,14 +291,14 @@
                 </div>
             </div>
 
-            <div class="animate-fade" style="margin-bottom: 80px;">
+            <div class="animate-fade" style="margin-bottom: 80px;" id="domainSection">
                 <h2 class="sect-title">Domain Expertise</h2>
                 <div id="subjList"></div>
             </div>
 
-            <!-- REQUEST NEW SUBJECT -->
+            <!-- REQUEST NEW SUBJECT (legacy 'teacher' accounts only — open 'user' accounts already have access to every subject) -->
             <div class="two-panel animate-fade" style="margin-bottom: 80px;">
-                <div>
+                <div id="requestSubjectPanel" style="display:none;">
                     <h2 class="sect-title">Request New Subject</h2>
                     <div class="form-card">
                         <div id="reqSubMsg" style="display:none;" class="msg-bar success">REQUEST SUBMITTED — AWAITING ADMIN APPROVAL</div>
@@ -342,8 +342,8 @@
                 </div>
             </div>
 
-            <!-- MY REQUESTS -->
-            <div class="animate-fade">
+            <!-- MY REQUESTS (legacy 'teacher' accounts only) -->
+            <div class="animate-fade" id="myRequestsSection" style="display:none;">
                 <h2 class="sect-title">My Subject Requests</h2>
                 <div class="panel" id="myReqPanel">
                     <div style="padding: 60px; text-align:center; color:var(--text-muted); font-family:'DM Mono', monospace; font-size:0.8em; letter-spacing:1px;">
@@ -381,14 +381,26 @@
                 document.getElementById('sQ').textContent = s.questions;
                 document.getElementById('sS').textContent = s.subjects;
 
-                document.getElementById('subjList').innerHTML = d.data.subjects.length > 0
-                    ? d.data.subjects.map(subj => `
-                        <div class="subj-chip">${subj.name} <em style="color:var(--text-muted); font-size:0.8em; margin-left:8px; font-style: normal;">${subj.code}</em></div>
-                    `).join('')
-                    : '<div style="color:var(--text-muted); font-family:DM Mono, monospace; font-size:0.8em; letter-spacing:1px;">No subjects assigned yet. Request one below!</div>';
+                const isTeacher = u.roles && u.roles.includes('teacher');
+                const isAdmin = u.roles && u.roles.includes('admin');
 
-                if (u.roles && u.roles.includes('admin')) {
+                if (isTeacher) {
+                    // Legacy accounts are still scoped to admin-assigned subjects.
+                    document.getElementById('subjList').innerHTML = d.data.subjects.length > 0
+                        ? d.data.subjects.map(subj => `
+                            <div class="subj-chip">${subj.name} <em style="color:var(--text-muted); font-size:0.8em; margin-left:8px; font-style: normal;">${subj.code}</em></div>
+                        `).join('')
+                        : '<div style="color:var(--text-muted); font-family:DM Mono, monospace; font-size:0.8em; letter-spacing:1px;">No subjects assigned yet. Request one below!</div>';
+                    document.getElementById('requestSubjectPanel').style.display = 'block';
+                    document.getElementById('myRequestsSection').style.display = 'block';
+                } else {
+                    // Open 'user' accounts already have access to every subject.
+                    document.getElementById('domainSection').style.display = 'none';
+                }
+
+                if (isAdmin) {
                     document.getElementById('adminLink').style.display = 'block';
+                    document.getElementById('qbNavItem').style.display = 'flex';
                 }
 
             } catch (e) { 
@@ -459,6 +471,8 @@
         }
 
         async function loadMyRequests() {
+            const u = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!u.roles || !u.roles.includes('teacher')) return; // legacy-only workflow
             try {
                 const res = await fetch(`${API}/teacher/requests`, {
                     headers: { 'Authorization': `Bearer ${token}` }

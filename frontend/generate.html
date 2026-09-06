@@ -113,6 +113,37 @@
             box-shadow: 0 0 0 5px var(--brand-dim);
         }
 
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .pill-btn {
+            padding: 10px 20px;
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 100px;
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            font-weight: 600;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .pill-btn:hover {
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+
+        .pill-btn.active {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: white;
+        }
+
         .btn-gen {
             width: 100%;
             padding: 18px;
@@ -273,7 +304,7 @@
             <a href="dashboard.html" class="nav-item">
                 <span class="nav-icon">▤</span> Dashboard
             </a>
-            <a href="questions.html" class="nav-item">
+            <a href="questions.html" class="nav-item" id="qbNavItem" style="display:none;">
                 <span class="nav-icon">⚄</span> Question Bank
             </a>
             <a href="generate.html" class="nav-item active">
@@ -336,8 +367,10 @@
 
                         <div class="form-group" style="background: #f1f5f9; padding: 6px; border-radius: 12px; margin-top: 32px;">
                             <div style="display:flex; gap:4px;">
+                                <button id="modeQuick" onclick="setMode('quick')"
+                                    style="flex:1; padding:12px; background:white; color:var(--brand); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; box-shadow: var(--shadow-sm);">Quick Generate</button>
                                 <button id="modeManual" onclick="setMode('manual')"
-                                    style="flex:1; padding:12px; background:white; color:var(--brand); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; box-shadow: var(--shadow-sm);">Handcrafted</button>
+                                    style="flex:1; padding:12px; background:transparent; color:var(--text-muted); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">Handcrafted</button>
                                 <button id="modeAI" onclick="setMode('ai')"
                                     style="flex:1; padding:12px; background:transparent; color:var(--text-muted); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">AI Synthesis</button>
                             </div>
@@ -354,7 +387,30 @@
                     <div class="card">
                         <div class="card-title"><span>02</span> Marks Distribution</div>
 
-                        <div class="dist-grid">
+                        <div id="quickBlock">
+                            <div class="form-group">
+                                <label>Total Marks</label>
+                                <div class="pill-row" id="marksPills">
+                                    <button type="button" class="pill-btn" data-marks="10" onclick="pickMarks(10)">10</button>
+                                    <button type="button" class="pill-btn" data-marks="20" onclick="pickMarks(20)">20</button>
+                                    <button type="button" class="pill-btn" data-marks="40" onclick="pickMarks(40)">40</button>
+                                    <button type="button" class="pill-btn active" data-marks="50" onclick="pickMarks(50)">50</button>
+                                    <button type="button" class="pill-btn" data-marks="80" onclick="pickMarks(80)">80</button>
+                                    <button type="button" class="pill-btn" data-marks="100" onclick="pickMarks(100)">100</button>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top:24px;">
+                                <label>Question Type</label>
+                                <div class="pill-row" id="typePills">
+                                    <button type="button" class="pill-btn active" data-type="mixed" onclick="pickType('mixed')">Mixed</button>
+                                    <button type="button" class="pill-btn" data-type="mcq" onclick="pickType('mcq')">MCQ</button>
+                                    <button type="button" class="pill-btn" data-type="short" onclick="pickType('short')">Short Answer</button>
+                                    <button type="button" class="pill-btn" data-type="long" onclick="pickType('long')">Long Answer</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dist-grid" id="manualDistGrid" style="display:none;">
                             <div class="dist-item">
                                 <div class="dist-head"><span class="dist-lbl">1 MARK ITEMS</span><span class="dist-val"
                                         id="v1">0</span></div>
@@ -380,7 +436,7 @@
                         <div style="margin-top:40px; border-top:1px solid var(--border); padding-top:24px; display:flex; justify-content:space-between; align-items: center;">
                             <div>
                                 <div style="font-family:'DM Mono'; font-size:0.65em; color:var(--text-muted); letter-spacing:2px; text-transform: uppercase;">Total Score</div>
-                                <div id="vTotal" style="font-family:'Playfair Display'; color:var(--brand); font-weight:900; font-size:2em;">0 / 100</div>
+                                <div id="vTotal" style="font-family:'Playfair Display'; color:var(--brand); font-weight:900; font-size:2em;">50 / 100</div>
                             </div>
                             <button id="btnGen" class="btn-gen" style="width: auto; margin-top: 0; padding: 18px 48px;" onclick="composerAction()">Initiate Synthesis →</button>
                         </div>
@@ -415,43 +471,69 @@
 
         document.getElementById('uName').textContent = user.username;
         document.getElementById('av').textContent = (user.username || 'P')[0].toUpperCase();
-        if (user.roles && user.roles.includes('admin')) document.getElementById('adminArea').style.display = 'block';
+        if (user.roles && user.roles.includes('admin')) {
+            document.getElementById('adminArea').style.display = 'block';
+            document.getElementById('qbNavItem').style.display = 'flex';
+        }
 
-        let mode = 'manual';
+        let mode = 'quick';
+        let quickMarks = 50;
+        let quickType = 'mixed';
         let currentPaper = null;
+
+        // Balanced default spread — used whenever the generator doesn't need
+        // per-mark-value control (Quick Generate mode).
+        const DEFAULT_BLOOMS = { remember: 20, understand: 30, apply: 30, analyze: 10, evaluate: 5, create: 5 };
+        const DEFAULT_DIFFICULTY = { easy: 30, medium: 50, hard: 20 };
 
         async function loadSubjects() {
             try {
-                const res = await fetch(`${API}/teacher/subjects`, { headers });
+                const res = await fetch(`${API}/subjects/`, { headers });
                 const d = await res.json();
-                const list = d.data || [];
+                const list = d.subjects || [];
                 document.getElementById('sSub').innerHTML = list.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-                updateDist();
+                if (mode === 'manual') updateDist(); else updateQuickTotal();
             } catch (e) { console.error(e); }
         }
 
         function setMode(m) {
             mode = m;
-            const btnManual = document.getElementById('modeManual');
-            const btnAI = document.getElementById('modeAI');
-            
-            if (m === 'manual') {
-                btnManual.style.background = 'white';
-                btnManual.style.color = 'var(--brand)';
-                btnManual.style.boxShadow = 'var(--shadow-sm)';
-                btnAI.style.background = 'transparent';
-                btnAI.style.color = 'var(--text-muted)';
-                btnAI.style.boxShadow = 'none';
-                document.getElementById('aiBlock').style.display = 'none';
-            } else {
-                btnAI.style.background = 'white';
-                btnAI.style.color = 'var(--brand)';
-                btnAI.style.boxShadow = 'var(--shadow-sm)';
-                btnManual.style.background = 'transparent';
-                btnManual.style.color = 'var(--text-muted)';
-                btnManual.style.boxShadow = 'none';
-                document.getElementById('aiBlock').style.display = 'block';
-            }
+            const buttons = { quick: document.getElementById('modeQuick'), manual: document.getElementById('modeManual'), ai: document.getElementById('modeAI') };
+
+            Object.entries(buttons).forEach(([key, btn]) => {
+                const active = key === m;
+                btn.style.background = active ? 'white' : 'transparent';
+                btn.style.color = active ? 'var(--brand)' : 'var(--text-muted)';
+                btn.style.boxShadow = active ? 'var(--shadow-sm)' : 'none';
+            });
+
+            document.getElementById('aiBlock').style.display = (m === 'ai') ? 'block' : 'none';
+            document.getElementById('manualDistGrid').style.display = (m === 'manual') ? 'grid' : 'none';
+            document.getElementById('quickBlock').style.display = (m === 'quick') ? 'block' : 'none';
+
+            if (m === 'manual') updateDist();
+            else if (m === 'quick') updateQuickTotal();
+        }
+
+        function pickMarks(value) {
+            quickMarks = value;
+            document.querySelectorAll('#marksPills .pill-btn').forEach(b => {
+                b.classList.toggle('active', parseInt(b.dataset.marks) === value);
+            });
+            updateQuickTotal();
+        }
+
+        function pickType(value) {
+            quickType = value;
+            document.querySelectorAll('#typePills .pill-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.type === value);
+            });
+        }
+
+        function updateQuickTotal() {
+            document.getElementById('vTotal').textContent = `${quickMarks} / 100`;
+            document.getElementById('vTotal').style.color = 'var(--brand)';
+            document.getElementById('btnGen').disabled = false;
         }
 
         function updateDist() {
@@ -472,29 +554,36 @@
         }
 
         async function composerAction() {
-            const m1 = parseInt(document.getElementById('m1').value);
-            const m3 = parseInt(document.getElementById('m3').value);
-            const m5 = parseInt(document.getElementById('m5').value);
-            const m10 = parseInt(document.getElementById('m10').value);
-            const totalMarks = (m1 * 1) + (m3 * 3) + (m5 * 5) + (m10 * 10);
             const duration = parseInt(document.getElementById('sDuration').value);
             const title = document.getElementById('sTitle').value || 'New Examination Paper';
             const subjectId = parseInt(document.getElementById('sSub').value);
 
             let endpoint = `${API}/papers/generate`;
-            let payload = {
-                title,
-                subject_id: subjectId,
-                duration_minutes: duration,
-                total_marks: totalMarks
-            };
+            let payload = { title, subject_id: subjectId, duration_minutes: duration };
 
-            if (mode === 'manual') {
+            if (mode === 'quick') {
+                payload.total_marks = quickMarks;
+                payload.config = {
+                    question_type: quickType,
+                    blooms_distribution: DEFAULT_BLOOMS,
+                    difficulty_distribution: DEFAULT_DIFFICULTY
+                };
+            } else if (mode === 'manual') {
+                const m1 = parseInt(document.getElementById('m1').value);
+                const m3 = parseInt(document.getElementById('m3').value);
+                const m5 = parseInt(document.getElementById('m5').value);
+                const m10 = parseInt(document.getElementById('m10').value);
+                payload.total_marks = (m1 * 1) + (m3 * 3) + (m5 * 5) + (m10 * 10);
                 payload.config = {
                     question_type: 'mixed',
                     marks_distribution: { 1: m1, 3: m3, 5: m5, 10: m10 }
                 };
             } else {
+                const m1 = parseInt(document.getElementById('m1').value);
+                const m3 = parseInt(document.getElementById('m3').value);
+                const m5 = parseInt(document.getElementById('m5').value);
+                const m10 = parseInt(document.getElementById('m10').value);
+                payload.total_marks = (m1 * 1) + (m3 * 3) + (m5 * 5) + (m10 * 10);
                 endpoint = `${API}/papers/generate-ai-syllabus`;
                 payload.syllabus = document.getElementById('aiTopic').value || 'General curriculum';
                 payload.distribution = { 1: m1, 3: m3, 5: m5, 10: m10 };
@@ -547,6 +636,7 @@
         }
 
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+        setMode('quick');
         loadSubjects();
     </script>
 </body>
