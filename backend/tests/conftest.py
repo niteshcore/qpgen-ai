@@ -88,13 +88,14 @@ def init_database(app):
         db.session.add_all([admin_role, teacher_role, viewer_role])
 
         # ── Test user (teacher role) ───────────────────────────────
+        subject = Subject(name='Unit Test Subject', code='UT100', description='For testing')
+        db.session.add(subject)
+
         user = User(username='testuser', email='test@test.com')
         user.set_password('password123')
         user.roles = [teacher_role]
+        user.subjects = [subject]  # teacher must be assigned to access/create questions in it
         db.session.add(user)
-
-        subject = Subject(name='Unit Test Subject', code='UT100', description='For testing')
-        db.session.add(subject)
         db.session.commit()
 
         yield {

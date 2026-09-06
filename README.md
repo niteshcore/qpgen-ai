@@ -90,8 +90,10 @@ Simply open `frontend/index.html` in your browser. For the best experience, use 
 ```
 
 ## 🔐 Credentials
-- **Admin**: `admin@test.com` / `admin123`
-- **Teacher**: `nitesh@test.com` / `nitesh123`
+Auto-seeded on first run against an empty database:
+- **Admin**: `admin@qpgen.com` / `admin123` (or `ADMIN_DEFAULT_PASSWORD` if set in `.env`)
+
+Register a new account via `/api/auth/register` to get a `teacher` role.
 
 ---
 *Developed as a Semester 6 Minor Project.*
