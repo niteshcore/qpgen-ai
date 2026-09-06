@@ -41,9 +41,9 @@
             </a>
 
             <div id="adminArea" style="display: none;">
-                <div class="nav-section">University Admin</div>
+                <div class="nav-section">Admin</div>
                 <a href="admin/teachers.html" class="nav-item">
-                    <span class="nav-icon">⌘</span> Manage Faculty
+                    <span class="nav-icon">⌘</span> Manage Users
                 </a>
                 <a href="admin/requests.html" class="nav-item">
                     <span class="nav-icon">✉</span> Access Requests
@@ -54,8 +54,8 @@
                 <div class="user-pill" onclick="location.href='profile.html'">
                     <div class="avatar" id="av">P</div>
                     <div class="user-meta">
-                        <div class="user-name" id="uName">Professor</div>
-                        <div class="user-email" id="uEmail">prof@univ.edu</div>
+                        <div class="user-name" id="uName">User</div>
+                        <div class="user-email" id="uEmail">you@example.com</div>
                     </div>
                 </div>
                 <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Secure Logout</button>
@@ -65,7 +65,7 @@
         <main class="main">
             <header class="page-header animate-fade">
                 <p id="dt">Establishing link...</p>
-                <h1 id="greet">Welcome back,<br><em>Professor.</em></h1>
+                <h1 id="greet">Welcome back,<br><em>friend.</em></h1>
                 
                 <div class="form-group" style="margin-top: 32px; max-width: 400px;">
                     <div style="position: relative;">
@@ -89,7 +89,7 @@
                 <div class="card stat-card">
                     <div class="stat-val" id="sS">0</div>
                     <div class="stat-lbl">Active Curricula</div>
-                    <div class="stat-trend" style="font-size: 0.7em; color: var(--brand); margin-top: 16px;">⌘ Verified Access</div>
+                    <div class="stat-trend" style="font-size: 0.7em; color: var(--brand); margin-top: 16px;">⌘ Full Access</div>
                 </div>
             </div>
 
@@ -128,7 +128,7 @@
         let allPapers = [];
 
         // UI Initialization
-        document.getElementById('uName').textContent = user.username || 'Professor';
+        document.getElementById('uName').textContent = user.username || 'User';
         document.getElementById('uEmail').textContent = user.email || '';
         document.getElementById('av').textContent = (user.username || 'P')[0].toUpperCase();
 
@@ -143,7 +143,7 @@
 
         const hr = date.getHours();
         const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
-        document.getElementById('greet').innerHTML = `${greeting},<br><em>${user.username || 'Professor'}.</em>`;
+        document.getElementById('greet').innerHTML = `${greeting},<br><em>${user.username || 'friend'}.</em>`;
 
         async function load() {
             try {
