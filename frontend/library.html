@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QPGen — Public Library</title>
+    <meta name="description"
+        content="Browse and download question papers shared by the QPGen community — filter by subject, marks, and question type. No login needed.">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f8f9fc;
+            --surface: #ffffff;
+            --surface-alt: #f1f4f9;
+            --border: #e4e8f0;
+            --border-strong: #cdd5e0;
+            --text-primary: #0f1724;
+            --text-secondary: #4a5568;
+            --text-muted: #8a97ab;
+            --blue: #2563eb;
+            --blue-light: #3b82f6;
+            --blue-dim: #eff6ff;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --radius: 14px;
+            --radius-sm: 8px;
+        }
+
+        html, body {
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+        }
+
+        .bg-system {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-color: var(--bg);
+            background-image: radial-gradient(#2563eb15 1.5px, transparent 1.5px);
+            background-size: 32px 32px;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            padding: 0 60px;
+            height: 68px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(248, 249, 252, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--blue) 0%, #1d4ed8 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.85em;
+            font-weight: 800;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .logo-name {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.1em;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-name span { color: var(--blue); }
+
+        nav { display: flex; align-items: center; gap: 8px; }
+
+        .nav-link {
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.88em;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+        }
+        .nav-link:hover { background: var(--surface-alt); color: var(--text-primary); }
+
+        .btn-nav {
+            padding: 9px 20px;
+            font-size: 0.88em;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+        }
+        .btn-nav-outline { background: transparent; border: 1.5px solid var(--border-strong); color: var(--text-secondary); }
+        .btn-nav-primary { background: var(--blue); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); }
+
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px 100px;
+        }
+
+        .page-hero { margin-bottom: 48px; }
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--blue);
+            margin-bottom: 16px;
+        }
+        .section-tag::before { content: ''; width: 16px; height: 2px; background: var(--blue); }
+        .page-hero h1 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 2.6em;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+        .page-hero p { color: var(--text-secondary); max-width: 560px; }
+
+        /* ── STATS STRIP ── */
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .stat-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+        }
+        .stat-box .num {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.8em;
+            font-weight: 800;
+            color: var(--blue);
+        }
+        .stat-box .lbl { font-size: 0.8em; color: var(--text-muted); margin-top: 2px; }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 36px;
+            box-shadow: var(--shadow-sm);
+        }
+        .filter-bar input, .filter-bar select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface-alt);
+            font-family: inherit;
+            font-size: 0.9em;
+            color: var(--text-primary);
+            outline: none;
+        }
+        .filter-bar input:focus, .filter-bar select:focus {
+            border-color: var(--blue);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px var(--blue-dim);
+        }
+
+        /* ── RESULTS ── */
+        .result-count { font-size: 0.85em; color: var(--text-muted); margin-bottom: 20px; }
+
+        .paper-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .paper-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: all 0.25s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .paper-card:hover {
+            border-color: var(--border-strong);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .paper-card-subject {
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--blue);
+        }
+        .paper-card-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.05em;
+            font-weight: 700;
+        }
+        .paper-card-meta { font-size: 0.8em; color: var(--text-secondary); }
+        .paper-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .paper-card-author { font-size: 0.75em; color: var(--text-muted); }
+        .paper-card-dl { font-size: 0.75em; font-weight: 700; color: var(--blue); text-decoration: none; }
+        .paper-card-dl:hover { text-decoration: underline; }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .load-more-wrap { text-align: center; margin-top: 40px; }
+        .btn-load-more {
+            padding: 12px 28px;
+            border: 1.5px solid var(--border-strong);
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.88em;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .btn-load-more:hover { border-color: var(--blue); color: var(--blue); }
+        .btn-load-more:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 0.8em;
+            border-top: 1px solid var(--border);
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 900px) {
+            header { padding: 0 20px; }
+            nav .nav-link { display: none; }
+            main { padding: 40px 20px 80px; }
+            .stats-strip { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { grid-template-columns: 1fr 1fr; }
+            .paper-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-system"></div>
+
+    <header>
+        <a class="logo" href="index.html">
+            <div class="logo-icon">QP</div>
+            <span class="logo-name">QP<span>Gen</span></span>
+        </a>
+        <nav>
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="index.html#features" class="nav-link">Features</a>
+            <a href="#" id="navAuthLink" class="btn-nav btn-nav-primary">Get Started →</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="page-hero">
+            <div class="section-tag">Public Library</div>
+            <h1>Browse shared papers.</h1>
+            <p>Every paper here was generated on QPGen and shared publicly by its creator. Filter by subject, marks,
+                or question type — download free, no account needed.</p>
+        </div>
+
+        <div class="stats-strip" id="statsStrip">
+            <div class="stat-box"><div class="num">—</div><div class="lbl">Papers</div></div>
+            <div class="stat-box"><div class="num">—</div><div class="lbl">Subjects</div></div>
+            <div class="stat-box"><div class="num">—</div><div class="lbl">Questions</div></div>
+            <div class="stat-box"><div class="num">—</div><div class="lbl">Total Marks</div></div>
+        </div>
+
+        <div class="filter-bar">
+            <input type="text" id="fQuery" placeholder="Search by paper title...">
+            <select id="fSubject"><option value="">All Subjects</option></select>
+            <select id="fMarks">
+                <option value="">Any Marks</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="40">40</option>
+                <option value="50">50</option>
+                <option value="80">80</option>
+                <option value="100">100</option>
+            </select>
+            <select id="fType">
+                <option value="">Any Type</option>
+                <option value="mcq">MCQ</option>
+                <option value="short">Short Answer</option>
+                <option value="long">Long Answer</option>
+            </select>
+        </div>
+
+        <div class="result-count" id="resultCount"></div>
+        <div class="paper-grid" id="resultsGrid">
+            <div class="empty-state">Loading…</div>
+        </div>
+
+        <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+            <button class="btn-load-more" id="loadMoreBtn" onclick="loadMore()">Load More</button>
+        </div>
+    </main>
+
+    <footer>© 2026 QPGen. All rights reserved.</footer>
+
+    <script>
+        const API = '/api';
+        const PAGE_SIZE = 12;
+        let offset = 0;
+        let totalCount = 0;
+        let debounceTimer = null;
+
+        if (localStorage.getItem('token')) {
+            const link = document.getElementById('navAuthLink');
+            link.textContent = 'Dashboard →';
+            link.href = 'dashboard.html';
+        } else {
+            document.getElementById('navAuthLink').href = 'index.html';
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API}/public/library/stats`);
+                const d = await res.json();
+                const boxes = document.querySelectorAll('#statsStrip .num');
+                boxes[0].textContent = d.overall.total_papers;
+                boxes[1].textContent = d.overall.total_subjects;
+                boxes[2].textContent = d.overall.total_questions;
+                boxes[3].textContent = d.overall.total_marks;
+            } catch (e) { console.error('Failed to load stats:', e); }
+        }
+
+        async function loadSubjectFilter() {
+            try {
+                const res = await fetch(`${API}/public/library/subjects`);
+                const d = await res.json();
+                const sel = document.getElementById('fSubject');
+                (d.subjects || []).forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.name} (${s.code})`;
+                    sel.appendChild(opt);
+                });
+            } catch (e) { console.error('Failed to load subjects:', e); }
+        }
+
+        function buildQuery() {
+            const params = new URLSearchParams();
+            const q = document.getElementById('fQuery').value.trim();
+            const subjectId = document.getElementById('fSubject').value;
+            const marks = document.getElementById('fMarks').value;
+            const type = document.getElementById('fType').value;
+
+            if (q) params.set('q', q);
+            if (subjectId) params.set('subject_id', subjectId);
+            if (marks) params.set('marks', marks);
+            if (type) params.set('question_type', type);
+            params.set('limit', PAGE_SIZE);
+            params.set('offset', offset);
+            return params.toString();
+        }
+
+        function renderCards(papers, append) {
+            const grid = document.getElementById('resultsGrid');
+            const html = papers.map(p => `
+                <div class="paper-card">
+                    <div class="paper-card-subject">${p.subject_name || 'General'}${p.subject_code ? ' · ' + p.subject_code : ''}</div>
+                    <div class="paper-card-title">${p.title}</div>
+                    <div class="paper-card-meta">${p.total_marks} marks · ${p.question_count} questions</div>
+                    <div class="paper-card-footer">
+                        <span class="paper-card-author">by ${p.created_by_username || 'someone'}</span>
+                        <a class="paper-card-dl" href="${API}/public/papers/${p.id}/pdf" target="_blank" rel="noopener">Download PDF →</a>
+                    </div>
+                </div>
+            `).join('');
+
+            if (append) grid.insertAdjacentHTML('beforeend', html);
+            else grid.innerHTML = html || '<div class="empty-state">No papers match your filters. Try adjusting them, or check back later — the library grows as people share.</div>';
+        }
+
+        async function search(reset) {
+            if (reset) offset = 0;
+            try {
+                const res = await fetch(`${API}/public/library/search?${buildQuery()}`);
+                const d = await res.json();
+                totalCount = d.count || 0;
+
+                renderCards(d.papers || [], !reset);
+
+                document.getElementById('resultCount').textContent =
+                    totalCount === 0 ? '' : `${totalCount} paper${totalCount === 1 ? '' : 's'} found`;
+
+                const loaded = offset + (d.papers || []).length;
+                document.getElementById('loadMoreWrap').style.display = loaded < totalCount ? 'block' : 'none';
+            } catch (e) {
+                console.error('Search failed:', e);
+                document.getElementById('resultsGrid').innerHTML = '<div class="empty-state">Couldn\'t load the library right now.</div>';
+            }
+        }
+
+        function loadMore() {
+            offset += PAGE_SIZE;
+            search(false);
+        }
+
+        document.getElementById('fQuery').addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => search(true), 350);
+        });
+        document.getElementById('fSubject').addEventListener('change', () => search(true));
+        document.getElementById('fMarks').addEventListener('change', () => search(true));
+        document.getElementById('fType').addEventListener('change', () => search(true));
+
+        loadStats();
+        loadSubjectFilter();
+        search(true);
+    </script>
+</body>
+
+</html>

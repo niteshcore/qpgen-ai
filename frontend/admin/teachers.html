@@ -180,9 +180,6 @@
             <a href="requests.html" class="nav-item">
                 <span class="nav-icon">✉</span> Access Requests
             </a>
-            <a href="support.html" class="nav-item">
-                <span class="nav-icon">☏</span> Support Desk
-            </a>
 
             <div class="sidebar-footer">
                 <div class="user-pill" onclick="location.href='../profile.html'">
@@ -192,31 +189,31 @@
                         <div class="user-email" id="uEmail">you@example.com</div>
                     </div>
                 </div>
-                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Secure Logout</button>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Log Out</button>
             </div>
         </aside>
 
         <main class="main">
             <header class="page-header animate-fade">
-                <p>System Administration</p>
-                <h1>Legacy<br><em>Access Hub.</em></h1>
+                <p>Admin</p>
+                <h1>Legacy<br><em>Teacher Accounts.</em></h1>
             </header>
 
             <div class="table-panel animate-fade">
                 <table>
                     <thead>
                         <tr>
-                            <th>Teacher Account</th>
-                            <th>Neural Identifier (Email)</th>
-                            <th>Allocated Domains</th>
-                            <th style="text-align:right">Management</th>
+                            <th>Teacher</th>
+                            <th>Email</th>
+                            <th>Assigned Subjects</th>
+                            <th style="text-align:right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="tList">
                         <tr>
                             <td colspan="4"
                                 style="text-align:center; padding:100px; font-family:'DM Mono'; color:var(--text-muted);">
-                                SYNCHRONIZING RECORDS...</td>
+                                Loading…</td>
                         </tr>
                     </tbody>
                 </table>
@@ -229,9 +226,9 @@
         <div class="modal">
             <div style="position:absolute; top:30px; right:30px; cursor:pointer; color:var(--text-muted);"
                 onclick="closeModal()">✕</div>
-            <h2 class="m-title" id="mUser">Domain Allocation</h2>
+            <h2 class="m-title" id="mUser">Assign Subjects</h2>
             <div class="subj-list" id="sList"></div>
-            <button class="btn-save" id="saveBtn" onclick="saveAssignment()">Update Access Protocols →</button>
+            <button class="btn-save" id="saveBtn" onclick="saveAssignment()">Save →</button>
         </div>
     </div>
 
@@ -302,9 +299,9 @@
                 const res = await fetch(`${API}/admin/assign-subjects`, {
                     method: 'POST', headers, body: JSON.stringify({ teacher_id: activeId, subject_ids: ids })
                 });
-                if (res.ok) { closeModal(); init(); } else alert('Update Failed');
-            } catch (e) { alert('System Link Failure'); }
-            finally { btn.disabled = false; btn.textContent = 'Update Access Protocols →'; }
+                if (res.ok) { closeModal(); init(); } else alert('Update failed.');
+            } catch (e) { alert('Something went wrong. Please try again.'); }
+            finally { btn.disabled = false; btn.textContent = 'Save →'; }
         }
 
         function logout() { localStorage.clear(); window.location.href = '../index.html'; }

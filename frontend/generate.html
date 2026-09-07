@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QPGen — Design Lab</title>
+    <title>QPGen — Generate Paper</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
@@ -334,14 +334,14 @@
                         <div class="user-email" id="uEmail">you@example.com</div>
                     </div>
                 </div>
-                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Secure Logout</button>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Log Out</button>
             </div>
         </aside>
 
         <main class="main">
             <header class="page-header animate-fade">
-                <p>Synthesis Lab</p>
-                <h1>Cognitive<br><em>Composer.</em></h1>
+                <p>Generate Paper</p>
+                <h1>Generate a<br><em>Paper.</em></h1>
             </header>
 
             <div class="content animate-fade">
@@ -349,14 +349,14 @@
 
                 <div class="two-col">
                     <div class="card">
-                        <div class="card-title"><span>01</span> Neural Configuration</div>
+                        <div class="card-title"><span>01</span> Paper Details</div>
 
                         <div class="form-group">
-                            <label>Curriculum Strata</label>
+                            <label>Subject</label>
                             <select id="sSub" onchange="loadStats()"></select>
                         </div>
                         <div class="form-group">
-                            <label>Archives Title</label>
+                            <label>Paper Title</label>
                             <input type="text" id="sTitle" placeholder="End-Term Evaluation (2025)...">
                         </div>
 
@@ -375,15 +375,15 @@
                                 <button id="modeQuick" onclick="setMode('quick')"
                                     style="flex:1; padding:12px; background:white; color:var(--brand); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; box-shadow: var(--shadow-sm);">Quick Generate</button>
                                 <button id="modeManual" onclick="setMode('manual')"
-                                    style="flex:1; padding:12px; background:transparent; color:var(--text-muted); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">Handcrafted</button>
+                                    style="flex:1; padding:12px; background:transparent; color:var(--text-muted); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">Manual</button>
                                 <button id="modeAI" onclick="setMode('ai')"
-                                    style="flex:1; padding:12px; background:transparent; color:var(--text-muted); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">AI Synthesis</button>
+                                    style="flex:1; padding:12px; background:transparent; color:var(--text-muted); border:none; cursor:pointer; border-radius: 8px; font-family: 'DM Mono'; font-weight: 700; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">AI Generate</button>
                             </div>
                         </div>
 
                         <div id="aiBlock" style="display:none; transition: all 0.3s;">
                             <div class="form-group">
-                                <label>Domain Constraints (Optional)</label>
+                                <label>Focus Topics (Optional)</label>
                                 <textarea id="aiTopic" rows="3" placeholder="Focus on specific topics..."></textarea>
                             </div>
                         </div>
@@ -440,10 +440,10 @@
 
                         <div style="margin-top:40px; border-top:1px solid var(--border); padding-top:24px; display:flex; justify-content:space-between; align-items: center;">
                             <div>
-                                <div style="font-family:'DM Mono'; font-size:0.65em; color:var(--text-muted); letter-spacing:2px; text-transform: uppercase;">Total Score</div>
+                                <div style="font-family:'DM Mono'; font-size:0.65em; color:var(--text-muted); letter-spacing:2px; text-transform: uppercase;">Total Marks</div>
                                 <div id="vTotal" style="font-family:'Playfair Display'; color:var(--brand); font-weight:900; font-size:2em;">50 / 100</div>
                             </div>
-                            <button id="btnGen" class="btn-gen" style="width: auto; margin-top: 0; padding: 18px 48px;" onclick="composerAction()">Initiate Synthesis →</button>
+                            <button id="btnGen" class="btn-gen" style="width: auto; margin-top: 0; padding: 18px 48px;" onclick="composerAction()">Generate →</button>
                         </div>
                     </div>
                 </div>
@@ -464,7 +464,7 @@
 
     <div id="neural" class="neural-overlay">
         <div class="neural-hex"></div>
-        <div style="font-family:'DM Mono'; color:var(--brand); letter-spacing:3px; font-size:0.85em; font-weight: 700;">CALCULATING NEURAL PATHWAYS</div>
+        <div style="font-family:'DM Mono'; color:var(--brand); letter-spacing:3px; font-size:0.85em; font-weight: 700;">GENERATING YOUR PAPER…</div>
     </div>
 
     <script>
@@ -602,8 +602,8 @@
                 if (res.ok) {
                     currentPaper = d.paper;
                     renderResult(d.paper);
-                } else alert(d.error || d.message || 'Synthesis error.');
-            } catch (e) { alert('Archival link failed.'); }
+                } else alert(d.error || d.message || 'Something went wrong.');
+            } catch (e) { alert('Something went wrong. Please try again.'); }
             finally { document.getElementById('neural').style.display = 'none'; }
         }
 
@@ -638,7 +638,7 @@
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-            } catch (e) { alert('PDF Synthesis failed.'); }
+            } catch (e) { alert('PDF download failed.'); }
         }
 
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }

@@ -359,30 +359,3 @@ def get_profile():
             'subjects': [s.to_dict() for s in user.subjects]
         }
     }), 200
-
-
-@teacher_bp.route('/support', methods=['POST'])
-@require_any_role('teacher', 'admin', 'user')
-def submit_support_request():
-    """Teacher submits a help/support message to admin."""
-    from app.models.support_message import SupportMessage
-    data = request.get_json()
-    user = get_current_user()
-
-    subject = data.get('subject')
-    message = data.get('message')
-
-    if not subject or not message:
-        return jsonify({'success': False, 'message': 'Subject and message are required'}), 400
-
-    msg = SupportMessage(user_id=user.id, subject=subject, message=message)
-    db.session.add(msg)
-    db.session.commit()
-
-    log_action('teacher.support_request', resource_type='support_message', resource_id=msg.id)
-
-    return jsonify({
-        'success': True,
-        'message': 'Support request submitted. Admin will be notified.',
-        'data': msg.to_dict()
-    }), 201

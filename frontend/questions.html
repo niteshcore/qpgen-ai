@@ -261,25 +261,25 @@
                         <div class="user-email" id="uEmail">you@example.com</div>
                     </div>
                 </div>
-                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Secure Logout</button>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Log Out</button>
             </div>
         </aside>
 
         <main class="main">
             <header class="page-header animate-fade">
-                <p>Repository 001</p>
-                <h1 id="archivesTitle">Knowledge<br><em>Archives.</em></h1>
-                <div id="subCount" style="font-family: 'DM Mono', monospace; font-size: 0.75em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 12px;">0 Questions indexed in current strata</div>
+                <p>Question Bank</p>
+                <h1 id="archivesTitle">Manage<br><em>Questions.</em></h1>
+                <div id="subCount" style="font-family: 'DM Mono', monospace; font-size: 0.75em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 12px;">0 questions in this subject</div>
             </header>
 
             <div class="toolbar animate-fade" style="display: flex; flex-direction: column; gap: 24px; background: white; padding: 32px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-md); margin-bottom: 48px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
                     <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 16px;">
                         <select class="select-win" id="fSub" onchange="loadQ()" style="width: 100%;">
-                            <option value="">All Subject Strata</option>
+                            <option value="">All Subjects</option>
                         </select>
                         <select class="select-win" id="fBloom" onchange="loadQ()" style="width: 100%;">
-                            <option value="">Cognitive Level</option>
+                            <option value="">Bloom's Level</option>
                             <option value="remember">Remembering</option>
                             <option value="understand">Understanding</option>
                             <option value="apply">Applying</option>
@@ -296,30 +296,30 @@
                     
                     <div class="actions" style="display: flex; gap: 12px;">
                         <button class="btn btn-outline" onclick="toggleAI()" style="padding: 10px 20px;">
-                            <span style="font-size: 1.2em; margin-right: 8px;">🪄</span> AI Portal
+                            <span style="font-size: 1.2em; margin-right: 8px;">🪄</span> Generate with AI
                         </button>
                         <button class="btn btn-outline" onclick="document.getElementById('bulkFile').click()" style="padding: 10px 20px;">
-                            <span style="opacity: 0.6; margin-right: 8px;">↑</span> Bulk
+                            <span style="opacity: 0.6; margin-right: 8px;">↑</span> Bulk Upload
                         </button>
                         <input type="file" id="bulkFile" accept=".csv, .xlsx, .xls" style="display:none" onchange="handleBulkUpload(this)">
                         <button class="btn btn-primary" onclick="openModal()" style="padding: 10px 32px; background: var(--grad-blue); box-shadow: 0 4px 12px rgba(37,99,235,0.2);">
-                            + Add Item
+                            + Add Question
                         </button>
                     </div>
                 </div>
             </div>
 
             <div class="q-list animate-fade" id="qContainer">
-                <div style="padding: 100px; text-align: center; color: var(--text-muted); font-family: 'DM Mono';">Establishing link to archives...</div>
+                <div style="padding: 100px; text-align: center; color: var(--text-muted); font-family: 'DM Mono';">Loading questions…</div>
             </div>
 
             <!-- Draft Cart UI -->
             <div id="draftCart" class="draft-cart">
                 <div style="flex: 1;">
                     <div id="cartCount" style="font-size: 1.1em; font-weight: 700;">0 Questions Selected</div>
-                    <div style="font-size: 0.75em; opacity: 0.8; font-family: 'DM Mono'; margin-top: 4px;">MANUAL COMPOSITION TARGET ACTIVE</div>
+                    <div style="font-size: 0.75em; opacity: 0.8; font-family: 'DM Mono'; margin-top: 4px;">BUILDING PAPER MANUALLY</div>
                 </div>
-                <button class="btn-draft" onclick="openDraftModal()">Create Manual Paper →</button>
+                <button class="btn-draft" onclick="openDraftModal()">Create Paper →</button>
             </div>
         </main>
     </div>
@@ -328,27 +328,27 @@
     <div class="overlay" id="draftOverlay">
         <div class="modal">
             <div class="close-btn" onclick="closeDraftModal()">✕</div>
-            <h2 style="font-family:'Playfair Display'; font-size:2.2em; margin-bottom:32px; font-weight: 700;">Manual <em>Composition</em></h2>
-            
+            <h2 style="font-family:'Playfair Display'; font-size:2.2em; margin-bottom:32px; font-weight: 700;">Create <em>Paper</em></h2>
+
             <div class="form-group">
-                <label>Examination Title</label>
+                <label>Paper Title</label>
                 <input type="text" id="dTitle" placeholder="e.g. Computer Science - Semester I">
             </div>
-            
+
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                 <div class="form-group">
                     <label>Duration (Minutes)</label>
                     <input type="number" id="dDuration" value="180">
                 </div>
                 <div class="form-group">
-                    <label>Total Score</label>
+                    <label>Total Marks</label>
                     <input type="number" id="dMarks" readonly style="background:var(--surface-alt); cursor:not-allowed;">
                 </div>
             </div>
 
-            <p style="font-size:0.75em; color:var(--text-muted); line-height:1.5; margin: 20px 0;">You have selected <strong id="dCount" style="color:var(--brand)">0</strong> questions for this paper across <strong id="dSubCount" style="color:var(--brand)">1</strong> subject(s). Ensure all items align with your departmental criteria.</p>
+            <p style="font-size:0.75em; color:var(--text-muted); line-height:1.5; margin: 20px 0;">You've selected <strong id="dCount" style="color:var(--brand)">0</strong> questions across <strong id="dSubCount" style="color:var(--brand)">1</strong> subject(s).</p>
 
-            <button class="btn btn-primary" style="width:100%;" onclick="generateManual()" id="dBtn">Finalize & Export Paper →</button>
+            <button class="btn btn-primary" style="width:100%;" onclick="generateManual()" id="dBtn">Create Paper</button>
         </div>
     </div>
 
@@ -357,21 +357,21 @@
         <div class="modal">
             <div class="close-btn" onclick="closeModal()">✕</div>
             <h2 style="font-family:'Playfair Display'; font-size:2.2em; margin-bottom:32px; font-weight: 700;">Add <em>Question</em></h2>
-            
+
             <div id="mErr" class="msg-bar error"></div>
             <div id="mSuc" class="msg-bar success"></div>
 
             <div class="form-group">
-                <label>Subject Allocation</label>
+                <label>Subject</label>
                 <select id="mSub"></select>
             </div>
             <div class="form-group">
-                <label>Question Proposition</label>
-                <textarea id="mText" rows="4" placeholder="Compose the examination item..."></textarea>
+                <label>Question Text</label>
+                <textarea id="mText" rows="4" placeholder="Type the question..."></textarea>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px;">
                 <div class="form-group">
-                    <label>Bloom Tier</label>
+                    <label>Bloom's Level</label>
                     <select id="mBloom">
                         <option value="remember">Remember</option>
                         <option value="understand">Understand</option>
@@ -384,17 +384,17 @@
                 <div class="form-group">
                     <label>Difficulty</label>
                     <select id="mDiff">
-                        <option value="easy">Level I — Easy</option>
-                        <option value="medium">Level II — Medium</option>
-                        <option value="hard">Level III — Hard</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Stat Score</label>
+                    <label>Marks</label>
                     <input type="number" id="mMarks" value="2">
                 </div>
             </div>
-            <button class="btn btn-primary" style="width:100%; margin-top: 12px;" onclick="saveQ()" id="mBtn">Commit to Archives →</button>
+            <button class="btn btn-primary" style="width:100%; margin-top: 12px;" onclick="saveQ()" id="mBtn">Save Question</button>
         </div>
     </div>
 
@@ -403,15 +403,15 @@
             <div class="ai-title">AI Assistant</div>
             <div class="close-btn" onclick="toggleAI()" style="position: static;">✕</div>
         </div>
-        <p style="font-size:0.9em; color:var(--text-secondary); line-height:1.6;">AI understands the pedagogical requirements of your strata and synthesizes items accordingly.</p>
+        <p style="font-size:0.9em; color:var(--text-secondary); line-height:1.6;">Generates a new question for this subject using AI.</p>
 
         <div class="form-group">
-            <label>Subject Domain</label>
+            <label>Subject</label>
             <select id="aiSub"></select>
         </div>
         <div class="form-group">
-            <label>Topic Constraint</label>
-            <input type="text" id="aiTopic" placeholder="Quantum Mechanics, Photosynthesis...">
+            <label>Topic</label>
+            <input type="text" id="aiTopic" placeholder="Normalization, Indexing, B-Trees...">
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div class="form-group">
@@ -423,16 +423,16 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Score Allocation</label>
+                <label>Marks</label>
                 <input type="number" id="aiMarks" value="5">
             </div>
         </div>
 
-        <button class="btn btn-primary" style="width:100%;" onclick="generateAI()" id="aiBtn">Synthesize Item ✨</button>
-        <div id="aiLoading" class="loading-dots">Engaging Neural Network...</div>
+        <button class="btn btn-primary" style="width:100%;" onclick="generateAI()" id="aiBtn">Generate Question</button>
+        <div id="aiLoading" class="loading-dots">Generating…</div>
 
         <div id="aiPreview" style="display:none; background:var(--brand-dim); padding:24px; border-radius: var(--radius); border: 1px solid var(--brand-light);">
-            <div style="font-size:0.7em; color:var(--brand); margin-bottom:12px; font-family:'DM Mono'; font-weight: 700; letter-spacing: 1px;">SYNTHESIS SUCCESSFUL</div>
+            <div style="font-size:0.7em; color:var(--brand); margin-bottom:12px; font-family:'DM Mono'; font-weight: 700; letter-spacing: 1px;">GENERATED</div>
             <div id="aiPrevText" style="font-size:0.95em; line-height:1.6; color: var(--text-primary);"></div>
         </div>
     </aside>
@@ -513,7 +513,7 @@
             if (bloom) filtered = filtered.filter(q => q.blooms_level === bloom);
             if (search) filtered = filtered.filter(q => q.text.toLowerCase().includes(search));
 
-            document.getElementById('subCount').textContent = `${filtered.length} items archived in current strata`;
+            document.getElementById('subCount').textContent = `${filtered.length} question${filtered.length === 1 ? '' : 's'} found`;
 
             if (filtered.length === 0) {
                 container.innerHTML = `<div style="padding:100px; text-align:center; color:var(--text-muted); font-size:0.9em; font-family:'DM Mono';">ARCHIVE EMPTY</div>`;
@@ -651,7 +651,7 @@
                     preview.style.display = 'block';
                     loadQ();
                 } else alert(d.message);
-            } catch { alert('AI Synthesis failed.'); }
+            } catch { alert('AI generation failed.'); }
             finally { btn.disabled = false; loader.style.display = 'none'; }
         }
 
@@ -664,7 +664,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) { alert(`Archived: ${data.message}`); loadQ(); } else alert(`Fail: ${data.error}`);
-            } catch (e) { alert('Upload aborted.'); }
+            } catch (e) { alert('Upload failed.'); }
             finally { input.value = ''; }
         }
 

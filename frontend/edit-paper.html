@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QPGen — Archival Editor</title>
+    <title>QPGen — Edit Paper</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
@@ -291,7 +291,7 @@
 
             <div style="margin-top:auto;">
                 <a href="#" class="nav-item" onclick="logout()">
-                    <span class="nav-icon">⏻</span> Secure Logout
+                    <span class="nav-icon">⏻</span> Log Out
                 </a>
             </div>
         </aside>
@@ -300,12 +300,12 @@
             <header class="page-hdr" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 60px;">
                 <div>
                     <p style="font-family:'DM Mono'; font-size:0.7em; color:var(--brand); letter-spacing:3px; text-transform:uppercase; margin-bottom: 12px; font-weight: 700;">
-                        Customization Terminal</p>
-                    <h1 id="pTitle" style="font-family: 'Playfair Display', serif; font-size: 3.5em; font-weight: 900; letter-spacing: -2px; line-height: 1;">Archival<br><em>Refinement.</em></h1>
+                        Edit Paper</p>
+                    <h1 id="pTitle" style="font-family: 'Playfair Display', serif; font-size: 3.5em; font-weight: 900; letter-spacing: -2px; line-height: 1;">Edit<br><em>Paper.</em></h1>
                 </div>
                 <div class="header-actions" style="margin-bottom: 10px;">
                     <button class="btn-action" onclick="downloadPdf()">Preview PDF ↓</button>
-                    <button class="btn-action btn-primary" onclick="saveChanges()">Commit Changes →</button>
+                    <button class="btn-action btn-primary" onclick="saveChanges()">Save Changes →</button>
                 </div>
             </header>
 
@@ -326,11 +326,11 @@
 
             <div class="q-list animate-fade" id="qList">
                 <div style="padding:100px; text-align:center; font-family:'DM Mono'; color:var(--text-muted);">LOADING
-                    ARCHIVAL DATA...</div>
+                    PAPER...</div>
             </div>
 
             <div class="add-zone animate-fade">
-                <button class="btn-action" style="border-style:dashed; padding:16px 40px; width: 100%; max-width: 400px;" onclick="openPool()">+ Supplement Archive</button>
+                <button class="btn-action" style="border-style:dashed; padding:16px 40px; width: 100%; max-width: 400px;" onclick="openPool()">+ Add Question</button>
             </div>
         </main>
     </div>
@@ -339,10 +339,10 @@
     <div class="overlay" id="poolOverlay">
         <div class="modal">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-                <h2 style="font-family:'Playfair Display'; font-size:2.2em; font-weight: 700;">Question <em>Pool</em></h2>
+                <h2 style="font-family:'Playfair Display'; font-size:2.2em; font-weight: 700;">Add a <em>Question</em></h2>
                 <div style="cursor:pointer; color:var(--text-muted); font-size: 1.5em;" onclick="closePool()">✕</div>
             </div>
-            <input type="text" class="search-box" id="poolSearch" placeholder="Search archive for supplement items..."
+            <input type="text" class="search-box" id="poolSearch" placeholder="Search questions..."
                 onkeyup="filterPool()">
             <div class="modal-body" id="poolList"></div>
         </div>
@@ -374,7 +374,7 @@
                 }
 
                 render();
-            } catch (e) { alert('Archival Link Lost'); }
+            } catch (e) { alert('Failed to load paper.'); }
         }
 
         function render() {
@@ -434,8 +434,8 @@
                 const res = await fetch(`${API}/papers/${paperId}`, {
                     method: 'PUT', headers, body: JSON.stringify({ question_ids: paperQuestions.map(q => q.id) })
                 });
-                if (res.ok) alert('Archives Synced Successfully'); else alert('Sync Failed');
-            } catch (e) { alert('Terminal Link Lost'); }
+                if (res.ok) alert('Changes saved.'); else alert('Save failed.');
+            } catch (e) { alert('Save failed. Please try again.'); }
         }
 
         async function downloadPdf() {
@@ -447,7 +447,7 @@
                 a.href = url;
                 a.download = `${currentPaper.title}.pdf`;
                 a.click();
-            } catch (e) { alert('PDF Synthesis Failed'); }
+            } catch (e) { alert('PDF download failed.'); }
         }
 
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }

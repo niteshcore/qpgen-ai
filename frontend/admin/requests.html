@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QPGen Admin — Access Protocols</title>
+    <title>QPGen Admin — Access Requests</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
@@ -188,9 +188,6 @@
             <a href="requests.html" class="nav-item active">
                 <span class="nav-icon">✉</span> Access Requests
             </a>
-            <a href="support.html" class="nav-item">
-                <span class="nav-icon">☏</span> Support Desk
-            </a>
 
             <div class="sidebar-footer">
                 <div class="user-pill" onclick="location.href='../profile.html'">
@@ -200,7 +197,7 @@
                         <div class="user-email" id="uEmail">you@example.com</div>
                     </div>
                 </div>
-                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Secure Logout</button>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Log Out</button>
             </div>
         </aside>
 
@@ -245,7 +242,7 @@
                 const el = document.getElementById('reqList');
 
                 if (reqs.length === 0) {
-                    el.innerHTML = '<div style="padding:100px; text-align:center; font-family:\'DM Mono\'; color:var(--text-muted); font-size:0.8em;">NO PENDING PROTOCOLS FOUND</div>';
+                    el.innerHTML = '<div style="padding:100px; text-align:center; font-family:\'DM Mono\'; color:var(--text-muted); font-size:0.8em;">No pending requests found.</div>';
                     return;
                 }
 
@@ -264,8 +261,8 @@
                         : `<div class="subj-name">${r.subject_name || '—'} <em style="color:var(--text-muted); font-style:normal;">(${r.subject_code || '—'})</em></div>`;
 
                     const confirmMsg = isNew
-                        ? `Approve new subject "${r.subject_name}" (${r.subject_code})? AI will generate 20 starter questions from the provided topics.`
-                        : `Confirm authorize for access protocol ${r.id}?`;
+                        ? `Approve new subject "${r.subject_name}" (${r.subject_code})? You'll need to add starter questions manually afterward.`
+                        : `Approve this access request?`;
 
                     return `
                         <div class="term-item" id="req-${r.id}">
@@ -309,12 +306,12 @@
                     }
                     setTimeout(() => loadRequests(), 1000);
                 } else {
-                    alert(d.message || 'Update Failed');
+                    alert(d.message || 'Update failed.');
                     if (apprBtn) { apprBtn.textContent = 'Authorize'; apprBtn.disabled = false; }
                     if (rejBtn) rejBtn.disabled = false;
                 }
             } catch (e) {
-                alert('System Link Failure');
+                alert('Something went wrong. Please try again.');
                 if (apprBtn) { apprBtn.textContent = 'Authorize'; apprBtn.disabled = false; }
                 if (rejBtn) rejBtn.disabled = false;
             }

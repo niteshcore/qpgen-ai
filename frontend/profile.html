@@ -263,7 +263,7 @@
                         <div class="user-email" id="uEmail">you@example.com</div>
                     </div>
                 </div>
-                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Secure Logout</button>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Log Out</button>
             </div>
         </aside>
 
@@ -279,25 +279,25 @@
             <div class="stats-grid animate-fade">
                 <div class="stat-card">
                     <div class="stat-val" id="sP">0</div>
-                    <div class="stat-lbl">Papers Authenticated</div>
+                    <div class="stat-lbl">Papers Generated</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-val" id="sQ">0</div>
-                    <div class="stat-lbl">Questions Indexed</div>
+                    <div class="stat-lbl">Questions Created</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-val" id="sS">0</div>
-                    <div class="stat-lbl">Curriculum Domains</div>
+                    <div class="stat-lbl">Subjects</div>
                 </div>
             </div>
 
             <div class="animate-fade" style="margin-bottom: 80px;" id="domainSection">
-                <h2 class="sect-title">Domain Expertise</h2>
+                <h2 class="sect-title">Your Subjects</h2>
                 <div id="subjList"></div>
             </div>
 
             <!-- REQUEST NEW SUBJECT (legacy 'teacher' accounts only — open 'user' accounts already have access to every subject) -->
-            <div class="two-panel animate-fade" style="margin-bottom: 80px;">
+            <div class="animate-fade" style="max-width: 560px; margin-bottom: 80px;">
                 <div id="requestSubjectPanel" style="display:none;">
                     <h2 class="sect-title">Request New Subject</h2>
                     <div class="form-card">
@@ -321,23 +321,6 @@
                             <textarea id="nsTopics" rows="4" placeholder="e.g. Arrays, Linked Lists, Trees, Graphs, Sorting Algorithms, Hashing, Dynamic Programming"></textarea>
                         </div>
                         <button class="btn-submit" onclick="requestNewSubject()" id="nsBtn">Submit Subject Request →</button>
-                    </div>
-                </div>
-
-                <div>
-                    <h2 class="sect-title">Secure Support Ticket</h2>
-                    <div class="form-card">
-                        <div id="sucMsg" style="display:none;" class="msg-bar success">TICKET TRANSMITTED SUCCESSFULLY</div>
-                        
-                        <div class="form-group">
-                            <label>Subject of Inquiry</label>
-                            <input type="text" id="hSub" placeholder="System access, Generation glitch...">
-                        </div>
-                        <div class="form-group">
-                            <label>Detailed Description</label>
-                            <textarea id="hMsg" rows="5" placeholder="Briefly explain your requirement..."></textarea>
-                        </div>
-                        <button class="btn-submit" onclick="sendSupport()">Transmit to Admin →</button>
                     </div>
                 </div>
             </div>
@@ -405,7 +388,7 @@
 
             } catch (e) { 
                 console.error(e);
-                alert('Archival Link Failure: ' + e.message); 
+                alert('Failed to load profile: ' + e.message);
             } finally {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('profileWrap').style.display = 'block';
@@ -512,31 +495,6 @@
                     `;
                 }).join('');
             } catch (e) { console.error('Failed to load requests:', e); }
-        }
-
-        async function sendSupport() {
-            const subject = document.getElementById('hSub').value;
-            const message = document.getElementById('hMsg').value;
-            if (!subject || !message) return alert('Input required.');
-
-            try {
-                const res = await fetch(`${API}/teacher/support`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ subject, message })
-                });
-
-                if (res.ok) {
-                    const msg = document.getElementById('sucMsg');
-                    msg.style.display = 'block';
-                    document.getElementById('hSub').value = '';
-                    document.getElementById('hMsg').value = '';
-                    setTimeout(() => msg.style.display = 'none', 4000);
-                }
-            } catch (e) { alert('Transmission failed.'); }
         }
 
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
