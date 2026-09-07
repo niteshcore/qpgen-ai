@@ -374,15 +374,21 @@
             document.getElementById('navAuthLink').href = 'index.html';
         }
 
+        // Rounds down to the nearest `step` and appends "+" once the count
+        // clears that step, so real counts read as thresholds, not raw totals.
+        function roundedCount(n, step) {
+            return n >= step ? `${Math.floor(n / step) * step}+` : String(n);
+        }
+
         async function loadStats() {
             try {
                 const res = await fetch(`${API}/public/library/stats`);
                 const d = await res.json();
                 const boxes = document.querySelectorAll('#statsStrip .num');
-                boxes[0].textContent = d.overall.total_papers;
-                boxes[1].textContent = d.overall.total_subjects;
-                boxes[2].textContent = d.overall.total_questions;
-                boxes[3].textContent = d.overall.total_marks;
+                boxes[0].textContent = roundedCount(d.overall.total_papers, 10);
+                boxes[1].textContent = roundedCount(d.overall.total_subjects, 10);
+                boxes[2].textContent = roundedCount(d.overall.total_questions, 100);
+                boxes[3].textContent = roundedCount(d.overall.total_marks, 100);
             } catch (e) { console.error('Failed to load stats:', e); }
         }
 

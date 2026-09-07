@@ -149,6 +149,12 @@
         const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
         document.getElementById('greet').innerHTML = `${greeting},<br><em>${user.username || 'there'}.</em>`;
 
+        // Rounds down to the nearest `step` and appends "+" once the count
+        // clears that step, so "403" reads as "400+" instead of a raw dev count.
+        function roundedCount(n, step) {
+            return n >= step ? `${Math.floor(n / step) * step}+` : String(n);
+        }
+
         async function load() {
             try {
                 const [qR, sR, pR] = await Promise.all([
@@ -161,8 +167,8 @@
                 const sD = await sR.json();
                 const pD = await pR.json();
 
-                document.getElementById('sQ').textContent = qD.count || 0;
-                document.getElementById('sS').textContent = sD.count || 0;
+                document.getElementById('sQ').textContent = roundedCount(qD.count || 0, 100);
+                document.getElementById('sS').textContent = roundedCount(sD.count || 0, 10);
                 document.getElementById('sP').textContent = pD.count || 0;
 
                 allPapers = pD.papers || [];

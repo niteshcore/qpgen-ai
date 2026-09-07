@@ -12,13 +12,12 @@ class AIService:
             return  # Model will remain None; methods guard against this
         
         genai.configure(api_key=self.api_key)
-        
-        # Prefer gemini-2.5-flash for speed and cost, fallback to gemini-2.5-pro
-        try:
-            self.model = genai.GenerativeModel('gemini-2.5-flash')
-        except Exception as e:
-            print(f"Warning: gemini-2.5-flash initialization failed, falling back to gemini-2.5-pro: {e}")
-            self.model = genai.GenerativeModel('gemini-2.5-pro')
+
+        # Use Google's "latest" alias rather than pinning a dated model name —
+        # a hardcoded version (e.g. gemini-2.5-flash) eventually gets retired
+        # for new API keys and starts failing at generate_content() time, not
+        # here at construction time, so a try/except here can't catch it.
+        self.model = genai.GenerativeModel('gemini-flash-latest')
 
     # -------------------------------------------------------------------------
     # NEW HELPERS — added for retry logic, temperature control, and validation.
