@@ -1,7 +1,5 @@
-/* 
-    QPGen Global Design System 
-    "Institutional Elegance" Theme
-    Curated for Educators & Faculty
+/*
+    QPGen Global Design System
 */
 
 :root {
@@ -492,6 +490,38 @@ textarea:focus {
     color: var(--gold);
     opacity: 0.7;
     flex-shrink: 0;
+}
+
+/* ── STATUS PILLS ── */
+.status-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65em;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+}
+
+.status-pill.status-draft {
+    background: rgba(245, 158, 11, 0.1);
+    color: #b45309;
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+.status-pill.status-final {
+    background: rgba(16, 185, 129, 0.1);
+    color: #047857;
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* ── STAT CARD ICON ── */
+.stat-icon {
+    font-size: 1.4em;
+    margin-bottom: 14px;
+    opacity: 0.9;
 }
 
 /* ── BLOOM CHART ── */

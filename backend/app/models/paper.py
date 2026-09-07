@@ -49,6 +49,7 @@ class Paper(db.Model):
             'subject_name': self.subject.name if self.subject else None,
             'subject_code': self.subject.code if self.subject else None,
             'created_by': self.created_by,
+            'created_by_username': self.author.username if self.author else None,
             'question_count': len(self.questions),
             'created_at': self.created_at.isoformat()
         }

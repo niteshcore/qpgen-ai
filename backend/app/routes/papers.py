@@ -13,9 +13,12 @@ papers_bp = Blueprint('papers', __name__)
 @papers_bp.route('/', methods=['GET'])
 @require_permission('papers.read')
 def get_papers():
-    """Get all papers for the current user."""
-    user_id = get_current_user().id
-    papers = Paper.query.filter_by(created_by=user_id).all()
+    """Get papers. Admins see every paper generated system-wide; everyone else sees only their own."""
+    user = get_current_user()
+    if user.has_role('admin'):
+        papers = Paper.query.order_by(Paper.created_at.desc()).all()
+    else:
+        papers = Paper.query.filter_by(created_by=user.id).order_by(Paper.created_at.desc()).all()
     return jsonify({
         'papers': [p.to_dict() for p in papers],
         'count': len(papers),

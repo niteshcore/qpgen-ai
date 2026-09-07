@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QPGen — Executive Dashboard</title>
+    <title>QPGen — Dashboard</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
@@ -58,18 +58,18 @@
                         <div class="user-email" id="uEmail">you@example.com</div>
                     </div>
                 </div>
-                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Secure Logout</button>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 16px; font-size: 0.7em;" onclick="logout()">Log Out</button>
             </div>
         </aside>
 
         <main class="main">
             <header class="page-header animate-fade">
-                <p id="dt">Establishing link...</p>
-                <h1 id="greet">Welcome back,<br><em>friend.</em></h1>
-                
+                <p id="dt">TODAY</p>
+                <h1 id="greet">Good morning,<br><em>there.</em></h1>
+
                 <div class="form-group" style="margin-top: 32px; max-width: 400px;">
                     <div style="position: relative;">
-                        <input type="text" id="pSearch" placeholder="Search archives..." oninput="filterPapers()">
+                        <input type="text" id="pSearch" placeholder="Search your papers..." oninput="filterPapers()">
                         <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--brand); font-size: 0.8em;">⌕</span>
                     </div>
                 </div>
@@ -77,38 +77,41 @@
 
             <div class="stats-grid animate-fade" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 60px;">
                 <div class="card stat-card">
+                    <div class="stat-icon">📄</div>
                     <div class="stat-val" id="sP">0</div>
-                    <div class="stat-lbl">Papers Crafted</div>
-                    <div class="stat-trend" style="font-size: 0.7em; color: var(--brand); margin-top: 16px;">✦ Institutional Repository</div>
+                    <div class="stat-lbl" id="sPLbl">Papers Generated</div>
+                    <div class="stat-trend" id="sPTrend" style="font-size: 0.7em; color: var(--brand); margin-top: 16px;">Your account</div>
                 </div>
                 <div class="card stat-card">
+                    <div class="stat-icon">📚</div>
                     <div class="stat-val" id="sQ">0</div>
-                    <div class="stat-lbl">Library Items</div>
-                    <div class="stat-trend" style="font-size: 0.7em; color: var(--blue); margin-top: 16px;">✧ Bloom Distributed</div>
+                    <div class="stat-lbl">Questions</div>
+                    <div class="stat-trend" style="font-size: 0.7em; color: var(--blue); margin-top: 16px;">In the question bank</div>
                 </div>
                 <div class="card stat-card">
+                    <div class="stat-icon">🎓</div>
                     <div class="stat-val" id="sS">0</div>
-                    <div class="stat-lbl">Active Curricula</div>
-                    <div class="stat-trend" style="font-size: 0.7em; color: var(--brand); margin-top: 16px;">⌘ Full Access</div>
+                    <div class="stat-lbl">Subjects</div>
+                    <div class="stat-trend" style="font-size: 0.7em; color: var(--brand); margin-top: 16px;">Available to you</div>
                 </div>
             </div>
 
             <div class="content-grid animate-fade" style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px;">
                 <div class="panel">
                     <div class="panel-head">
-                        <span class="panel-title">Recent Archival Entries</span>
-                        <a href="generate.html" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.6em;">+ New Synthesis</a>
+                        <span class="panel-title">Recent Papers</span>
+                        <a href="generate.html" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.6em;">+ New Paper</a>
                     </div>
                     <div id="paperListContainer">
                         <div style="padding: 80px; text-align: center; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.8em; letter-spacing: 1px;">
-                            Consulting historical records...
+                            Loading papers…
                         </div>
                     </div>
                 </div>
 
                 <div class="panel">
                     <div class="panel-head">
-                        <span class="panel-title">Pedagogical Spectrum</span>
+                        <span class="panel-title">Bloom's Coverage</span>
                     </div>
                     <div class="bloom-chart" id="bloomContainer">
                         <!-- Bloom bars -->
@@ -135,6 +138,7 @@
         if (user.roles && user.roles.includes('admin')) {
             document.getElementById('adminArea').style.display = 'block';
             document.getElementById('qbNavItem').style.display = 'flex';
+            document.getElementById('sPTrend').textContent = 'Across all users';
         }
 
         const date = new Date();
@@ -143,7 +147,7 @@
 
         const hr = date.getHours();
         const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
-        document.getElementById('greet').innerHTML = `${greeting},<br><em>${user.username || 'friend'}.</em>`;
+        document.getElementById('greet').innerHTML = `${greeting},<br><em>${user.username || 'there'}.</em>`;
 
         async function load() {
             try {
@@ -194,24 +198,30 @@
                     });
                 }, 100);
 
-            } catch (e) { console.error('Archive link failed:', e); }
+            } catch (e) { console.error('Dashboard load failed:', e); }
         }
 
         function renderPapers(papers) {
             const container = document.getElementById('paperListContainer');
             if (papers.length === 0) {
-                container.innerHTML = `<div style="padding: 60px; text-align:center; color:var(--muted); font-size:0.8em;">No archival entries found.</div>`;
+                container.innerHTML = `
+                    <div style="padding: 70px 40px; text-align:center;">
+                        <div style="font-size:2em; margin-bottom:12px; opacity:0.5;">📄</div>
+                        <div style="color:var(--text-secondary); font-size:0.95em; margin-bottom:16px;">No papers yet.</div>
+                        <a href="generate.html" class="btn btn-primary" style="padding: 10px 20px; font-size:0.65em;">Generate your first paper →</a>
+                    </div>`;
                 return;
             }
 
+            const isAdmin = user.roles && user.roles.includes('admin');
             container.innerHTML = papers.slice(0, 6).map((p, i) => `
                 <div class="paper-item" onclick="location.href='generate.html?paper_id=${p.id}'">
                     <div class="paper-num">${String(i + 1).padStart(2, '0')}</div>
                     <div class="paper-content">
                         <div class="paper-title">${p.title}</div>
-                        <div class="paper-meta">${p.subject_name || 'General'} • ${p.total_marks} MARKS • ${p.question_count} ITEMS</div>
+                        <div class="paper-meta">${p.subject_name || 'General'} · ${p.total_marks} marks · ${p.question_count} questions${isAdmin && p.created_by_username ? ' · by ' + p.created_by_username : ''}</div>
                     </div>
-                    <div class="paper-status">ENCRYPTED</div>
+                    <div class="status-pill status-${(p.status || 'draft').toLowerCase()}">${p.status || 'draft'}</div>
                 </div>
             `).join('');
         }
