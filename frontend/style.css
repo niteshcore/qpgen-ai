@@ -517,6 +517,34 @@ textarea:focus {
     border-color: rgba(16, 185, 129, 0.25);
 }
 
+/* ── SHARE TOGGLE (paper list) ── */
+.share-toggle {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65em;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.share-toggle:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: var(--brand-dim);
+}
+
+.share-toggle.is-public {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: var(--brand-dim);
+}
+
 /* ── STAT CARD ICON ── */
 .stat-icon {
     font-size: 1.4em;

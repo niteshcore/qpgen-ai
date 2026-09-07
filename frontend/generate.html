@@ -365,6 +365,11 @@
                             <input type="number" id="sDuration" value="180" min="30" max="300">
                         </div>
 
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.85em; color:var(--text-secondary); margin-top:8px;">
+                            <input type="checkbox" id="sPublic" style="width:auto; accent-color: var(--brand);">
+                            Share to the public library (anyone can view &amp; download, no login needed)
+                        </label>
+
                         <div class="form-group" style="background: #f1f5f9; padding: 6px; border-radius: 12px; margin-top: 32px;">
                             <div style="display:flex; gap:4px;">
                                 <button id="modeQuick" onclick="setMode('quick')"
@@ -558,8 +563,9 @@
             const title = document.getElementById('sTitle').value || 'New Examination Paper';
             const subjectId = parseInt(document.getElementById('sSub').value);
 
+            const isPublic = document.getElementById('sPublic').checked;
             let endpoint = `${API}/papers/generate`;
-            let payload = { title, subject_id: subjectId, duration_minutes: duration };
+            let payload = { title, subject_id: subjectId, duration_minutes: duration, is_public: isPublic };
 
             if (mode === 'quick') {
                 payload.total_marks = quickMarks;

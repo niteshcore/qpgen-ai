@@ -28,6 +28,9 @@ class Paper(db.Model):
     # Status
     status = db.Column(db.String(20), default='draft')  # 'draft', 'final'
 
+    # Opt-in: shared into the public library, visible/downloadable without login
+    is_public = db.Column(db.Boolean, nullable=False, default=False)
+
     # Foreign keys
     subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -45,6 +48,7 @@ class Paper(db.Model):
             'duration_minutes': self.duration_minutes,
             'config': self.config,
             'status': self.status,
+            'is_public': self.is_public,
             'subject_id': self.subject_id,
             'subject_name': self.subject.name if self.subject else None,
             'subject_code': self.subject.code if self.subject else None,

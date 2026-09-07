@@ -870,6 +870,77 @@
             line-height: 1.65;
         }
 
+        /* ── COMMUNITY LIBRARY ── */
+        .paper-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 56px;
+        }
+
+        .paper-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .paper-card:hover {
+            background: var(--surface);
+            border-color: var(--border-strong);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-2px);
+        }
+
+        .paper-card-subject {
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--blue);
+        }
+
+        .paper-card-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.05em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .paper-card-meta {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .paper-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .paper-card-author {
+            font-size: 0.75em;
+            color: var(--text-muted);
+        }
+
+        .paper-card-dl {
+            font-size: 0.75em;
+            font-weight: 700;
+            color: var(--blue);
+            text-decoration: none;
+        }
+
+        .paper-card-dl:hover {
+            text-decoration: underline;
+        }
+
         /* ── CTA SECTION ── */
         .cta-section {
             padding: 80px 60px;
@@ -1148,6 +1219,7 @@
             <span class="logo-name">QP<span>Gen</span></span>
         </a>
         <nav>
+            <a href="#library" class="nav-link">Library</a>
             <a href="#features" class="nav-link">Features</a>
             <a href="#how-it-works" class="nav-link">How it Works</a>
             <a href="#" class="btn-nav btn-nav-outline" onclick="openAuth('login')">Sign In</a>
@@ -1268,6 +1340,18 @@
             <div class="stat-label">Average Paper Generation Time</div>
         </div>
     </div>
+
+    <!-- COMMUNITY LIBRARY -->
+    <section class="section" id="library">
+        <div class="section-tag">Community Library</div>
+        <h2 class="section-title">Real papers, shared by real people</h2>
+        <p class="section-sub">Every paper below was generated right here on QPGen and shared publicly by its
+            creator. Browse and download free — no account needed.</p>
+        <div class="paper-grid" id="libraryGrid">
+            <div style="grid-column: 1/-1; text-align:center; color:var(--text-muted); padding:40px 0;">Loading
+                shared papers…</div>
+        </div>
+    </section>
 
     <!-- HOW IT WORKS -->
     <section class="section" id="how-it-works">
@@ -1474,6 +1558,37 @@
         document.getElementById('authBox').addEventListener('click', (e) => {
             if (e.target.id === 'authBox') closeAuth();
         });
+
+        async function loadLibrary() {
+            const grid = document.getElementById('libraryGrid');
+            try {
+                const res = await fetch(`${API}/public/papers?limit=6`);
+                const d = await res.json();
+                const papers = d.papers || [];
+
+                if (papers.length === 0) {
+                    grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:var(--text-muted); padding:40px 0;">
+                        No papers shared yet — be the first. Sign up, generate a paper, and share it publicly.
+                    </div>`;
+                    return;
+                }
+
+                grid.innerHTML = papers.map(p => `
+                    <div class="paper-card">
+                        <div class="paper-card-subject">${p.subject_name || 'General'}${p.subject_code ? ' · ' + p.subject_code : ''}</div>
+                        <div class="paper-card-title">${p.title}</div>
+                        <div class="paper-card-meta">${p.total_marks} marks · ${p.question_count} questions</div>
+                        <div class="paper-card-footer">
+                            <span class="paper-card-author">by ${p.created_by_username || 'someone'}</span>
+                            <a class="paper-card-dl" href="${API}/public/papers/${p.id}/pdf" target="_blank" rel="noopener">Download PDF →</a>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:var(--text-muted); padding:40px 0;">Couldn't load the library right now.</div>`;
+            }
+        }
+        loadLibrary();
 
         if (localStorage.getItem('token')) window.location.href = 'dashboard.html';
     </script>

@@ -96,6 +96,7 @@ def create_paper():
         config=data['config'],
         subject_id=data['subject_id'],
         created_by=get_current_user().id,
+        is_public=bool(data.get('is_public', False)),
     )
 
     db.session.add(paper)
@@ -160,6 +161,7 @@ def manual_generate_paper():
         config={'manual_mode': True},
         subject_id=data['subject_id'],
         created_by=user.id,
+        is_public=bool(data.get('is_public', False)),
     )
 
     db.session.add(paper)
@@ -212,6 +214,11 @@ def update_paper(paper_id):
 
     if 'title' in data:
         paper.title = data['title']
+
+    if 'is_public' in data:
+        paper.is_public = bool(data['is_public'])
+        log_action('paper.share' if paper.is_public else 'paper.unshare',
+                   resource_type='paper', resource_id=paper_id)
 
     if 'question_ids' in data:
         new_questions = Question.query.filter(Question.id.in_(data['question_ids'])).all()
@@ -293,7 +300,8 @@ def generate_ai_syllabus_paper():
             duration_minutes=data['duration_minutes'],
             config={'syllabus_mode': True, 'topic': data['syllabus'], 'distribution': data['distribution']},
             subject_id=data['subject_id'],
-            created_by=user.id
+            created_by=user.id,
+            is_public=bool(data.get('is_public', False))
         )
         db.session.add(paper)
         db.session.flush()

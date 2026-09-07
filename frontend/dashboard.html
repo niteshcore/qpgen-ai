@@ -221,9 +221,21 @@
                         <div class="paper-title">${p.title}</div>
                         <div class="paper-meta">${p.subject_name || 'General'} · ${p.total_marks} marks · ${p.question_count} questions${isAdmin && p.created_by_username ? ' · by ' + p.created_by_username : ''}</div>
                     </div>
+                    <button class="share-toggle ${p.is_public ? 'is-public' : ''}" onclick="event.stopPropagation(); toggleShare(${p.id}, ${!!p.is_public})">${p.is_public ? '🌐 Public' : 'Share'}</button>
                     <div class="status-pill status-${(p.status || 'draft').toLowerCase()}">${p.status || 'draft'}</div>
                 </div>
             `).join('');
+        }
+
+        async function toggleShare(paperId, currentlyPublic) {
+            try {
+                await fetch(`${API}/papers/${paperId}`, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify({ is_public: !currentlyPublic })
+                });
+                await load();
+            } catch (e) { console.error('Share toggle failed:', e); }
         }
 
         function filterPapers() {

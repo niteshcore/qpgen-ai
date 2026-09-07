@@ -32,13 +32,15 @@ def create_app(config_name='default'):
     from app.routes.subjects import subjects_bp
     from app.routes.admin import admin_bp
     from app.routes.teacher import teacher_bp
-    
+    from app.routes.public import public_bp
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(questions_bp, url_prefix='/api/questions')
     app.register_blueprint(papers_bp, url_prefix='/api/papers')
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(teacher_bp, url_prefix='/api/teacher')
+    app.register_blueprint(public_bp, url_prefix='/api/public')
     
     # Auto-create tables and seed data ONLY for local/ephemeral SQLite databases.
     # Running db.create_all() against a remote PostgreSQL DB on Vercel cold starts
