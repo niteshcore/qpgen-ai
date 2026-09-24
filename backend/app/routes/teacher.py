@@ -5,6 +5,7 @@ from app.models.question import Question
 from app.models.subject import Subject
 from app.authorization import require_permission, require_role, require_any_role, get_current_user
 from app.services.audit_service import log_action
+from app.services import embedding_service
 
 teacher_bp = Blueprint('teacher', __name__)
 
@@ -109,8 +110,12 @@ def add_question():
         created_by=user.id
     )
 
+    vector, duplicates = embedding_service.check_duplicates_best_effort(question.text, subject_ids=[subject_id])
+
     db.session.add(question)
     db.session.commit()
+    if vector is not None:
+        embedding_service.index_questions_best_effort([question], vectors=[vector])
     
     log_action('teacher.question.create', resource_type='question', resource_id=question.id,
                details={'subject_id': subject_id, 'manual': True})
@@ -118,7 +123,8 @@ def add_question():
     return jsonify({
         'success': True,
         'message': 'Question added successfully',
-        'data': question.to_dict()
+        'data': question.to_dict(),
+        'similar_existing': embedding_service.similar_to_dicts(duplicates),
     }), 201
 
 @teacher_bp.route('/questions/generate', methods=['POST'])
@@ -183,16 +189,21 @@ def generate_and_save_question():
             created_by=user.id
         )
         
+        vector, duplicates = embedding_service.check_duplicates_best_effort(question.text, subject_ids=[subject_id])
+
         db.session.add(question)
         db.session.commit()
+        if vector is not None:
+            embedding_service.index_questions_best_effort([question], vectors=[vector])
         
         log_action('teacher.question.generate_ai', resource_type='question', resource_id=question.id,
-                   details={'subject_id': subject_id, 'topic': topic})
+                   details={'subject_id': subject_id, 'topic': topic, 'near_duplicates': len(duplicates)})
 
         return jsonify({
             'success': True,
             'message': 'Question generated and saved successfully',
-            'data': question.to_dict()
+            'data': question.to_dict(),
+            'similar_existing': embedding_service.similar_to_dicts(duplicates),
         }), 201
         
     except Exception as e:

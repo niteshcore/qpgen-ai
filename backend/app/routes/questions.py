@@ -5,6 +5,7 @@ from app.models.question import Question
 from app.models.subject import Subject
 from app.authorization import require_permission, get_current_user
 from app.services.audit_service import log_action
+from app.services import embedding_service
 
 questions_bp = Blueprint('questions', __name__)
 
@@ -170,6 +171,7 @@ def create_question():
 
     db.session.add(question)
     db.session.commit()
+    embedding_service.index_questions_best_effort([question])
     log_action('question.create', resource_type='question', resource_id=question.id,
                details={'subject_id': question.subject_id, 'question_type': question.question_type})
 
@@ -203,6 +205,7 @@ def update_question(question_id):
     question.correct_answer = data.get('correct_answer', question.correct_answer)
 
     db.session.commit()
+    embedding_service.index_questions_best_effort([question])  # no-op unless the text changed
     log_action('question.update', resource_type='question', resource_id=question.id)
 
     return jsonify({
@@ -259,11 +262,14 @@ def generate_ai_question():
         generated.setdefault('marks',         marks)
         generated.setdefault('blooms_level',  'understand')
 
+        _, duplicates = embedding_service.check_duplicates_best_effort(generated['text'], subject_ids=[subject_id])
+
         log_action('question.generate_ai', details={'subject_id': subject_id, 'topic': topic,
                                                     'question_type': question_type})
         return jsonify({
             'message': 'AI question generated successfully',
             'question': generated,
+            'similar_existing': embedding_service.similar_to_dicts(duplicates),
         }), 200
     except ValueError as ve:
         log_action('question.generate_ai', status='failure',
@@ -273,6 +279,71 @@ def generate_ai_question():
         log_action('question.generate_ai', status='failure',
                    details={'subject_id': subject_id, 'topic': topic, 'error': str(e)})
         return jsonify({'error': f'AI generation failed: {str(e)}'}), 500
+
+
+def _searchable_subject_ids(user, subject_id=None):
+    """
+    Subjects the user may search. None means all subjects (admin, no filter).
+    Returns False if the user asked for a subject they aren't assigned to.
+    """
+    if user.has_role('admin'):
+        return [subject_id] if subject_id else None
+    assigned = [s.id for s in user.subjects]
+    if subject_id:
+        return [subject_id] if subject_id in assigned else False
+    return assigned
+
+
+@questions_bp.route('/similar', methods=['POST'])
+@require_permission('questions.read')
+def find_similar_questions():
+    """
+    Semantic search / duplicate check.
+    Body: {"text": "...", "subject_id": optional, "limit": optional (max 20)}
+    Returns the closest existing questions with cosine similarity and an is_duplicate flag.
+    """
+    data = request.get_json() or {}
+    text = (data.get('text') or '').strip()
+    if not text:
+        return jsonify({'error': 'text is required'}), 400
+    limit = max(1, min(int(data.get('limit', 5)), 20))
+
+    subject_ids = _searchable_subject_ids(get_current_user(), data.get('subject_id'))
+    if subject_ids is False:
+        return jsonify({'error': 'Forbidden', 'message': 'You do not have access to this subject'}), 403
+
+    try:
+        vector = embedding_service.embed_text(text)
+    except Exception as e:
+        return jsonify({'error': 'Semantic search unavailable', 'message': str(e)}), 503
+
+    matches = embedding_service.find_similar(vector, subject_ids=subject_ids, limit=limit)
+    return jsonify({
+        'matches': embedding_service.similar_to_dicts(matches),
+        'duplicate_threshold': embedding_service.DUPLICATE_THRESHOLD,
+    }), 200
+
+
+@questions_bp.route('/<int:question_id>/similar', methods=['GET'])
+@require_permission('questions.read')
+def get_similar_to_question(question_id):
+    """Questions semantically closest to an existing one (uses its stored embedding)."""
+    question = db.get_or_404(Question, question_id)
+    user = get_current_user()
+    subject_ids = _searchable_subject_ids(user)
+    if subject_ids is not None and question.subject_id not in subject_ids:
+        return jsonify({'error': 'Forbidden', 'message': 'You do not have access to questions from this subject'}), 403
+
+    if question.embedding_row is None:
+        return jsonify({'error': 'This question has not been embedded yet'}), 409
+
+    limit = max(1, min(request.args.get('limit', type=int, default=5), 20))
+    matches = embedding_service.find_similar(question.embedding_row.embedding, subject_ids=subject_ids,
+                                             limit=limit, exclude_ids=[question.id])
+    return jsonify({
+        'matches': embedding_service.similar_to_dicts(matches),
+        'duplicate_threshold': embedding_service.DUPLICATE_THRESHOLD,
+    }), 200
 
 
 @questions_bp.route('/<int:question_id>', methods=['DELETE'])
@@ -328,6 +399,7 @@ def bulk_upload_questions():
         user_id = user.id
         count = 0
         skipped_rows = []
+        created = []
         
         # Determine allowed subjects for security check
         if not user.has_role('admin'):
@@ -359,9 +431,11 @@ def bulk_upload_questions():
                 correct_answer=str(row['correct_answer']) if 'correct_answer' in row and pd.notna(row['correct_answer']) else None
             )
             db.session.add(q)
+            created.append(q)
             count += 1
 
         db.session.commit()
+        embedding_service.index_questions_best_effort(created)
         log_action('questions.bulk_upload', details={'count': count, 'skipped': len(skipped_rows)})
         
         response = {

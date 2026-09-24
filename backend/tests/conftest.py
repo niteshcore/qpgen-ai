@@ -113,3 +113,32 @@ def auth_headers(client, init_database):
     })
     token = res.get_json()['access_token']
     return {'Authorization': f'Bearer {token}'}
+
+
+class FakeEmbedder:
+    """
+    Deterministic bag-of-words embedder so tests never call Gemini.
+    Identical text -> similarity 1.0; unrelated text -> close to 0.
+    """
+    calls = 0
+
+    def embed(self, texts, task_type='SEMANTIC_SIMILARITY'):
+        import hashlib
+        import numpy as np
+        from app.services.embedding_service import EMBEDDING_DIM, _normalise
+        FakeEmbedder.calls += 1
+        matrix = np.zeros((len(texts), EMBEDDING_DIM), dtype=np.float32)
+        for row, text in enumerate(texts):
+            for word in text.lower().split():
+                matrix[row, int(hashlib.md5(word.encode()).hexdigest(), 16) % EMBEDDING_DIM] += 1.0
+        return _normalise(matrix)
+
+
+@pytest.fixture(autouse=True)
+def fake_embedder():
+    from app.services import embedding_service
+    fake = FakeEmbedder()
+    FakeEmbedder.calls = 0
+    embedding_service.set_embedder(fake)
+    yield fake
+    embedding_service.set_embedder(None)

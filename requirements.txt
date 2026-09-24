@@ -28,6 +28,10 @@ Flask-CORS==4.0.0
 reportlab==4.0.7
 google-generativeai==0.8.3
 
+# Semantic search (embeddings stored in pgvector on Postgres)
+pgvector==0.5.0
+numpy>=1.26
+
 # Data processing (for bulk uploads)
 pandas>=2.1.4
 openpyxl>=3.1.2

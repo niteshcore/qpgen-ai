@@ -19,6 +19,9 @@
   - **Auto-Retry & Validation**: Built-in 3-attempt validation loop ensures AI always returns correctly structured, non-empty JSON.
   - **Dynamic Temperature Control**: AI creativity maps to target difficulty (Easy=0.3, Medium=0.5, Hard=0.8).
   - **Robust Error Handling**: Structured error bubbling if generation constraints fail.
+- **Semantic Search & Duplicate Detection**: Every question is embedded with Gemini (`gemini-embedding-001`, 768-d) and stored in **pgvector** on Postgres (JSON on local SQLite).
+  - Search the bank by meaning ("✨ AI" in the search bar), not just keywords.
+  - New and AI-generated questions are checked against the bank; near-duplicates (cosine ≥ 0.92, calibrated on the seeded bank) trigger a warning before saving.
 - **AI Paper Generation**: Generate comprehensive exam papers by specifying distributions for Bloom's levels and difficulty levels.
 - **Advanced Dashboard**: Real-time statistics on question availability, subjects, and cognitive domain distribution.
 - **Premium UI**: Sleek, dark-mode professional interface with smooth micro-animations and responsive design.
@@ -28,6 +31,7 @@
 
 - **Backend**: Python / Flask Serverless (Vercel ready)
 - **Database**: PostgreSQL via Supabase (Production) / SQLite (Local) with SQLAlchemy ORM
+- **Vector Search**: pgvector (HNSW index, cosine distance) + Gemini embeddings
 - **Authentication**: JWT (Flask-JWT-Extended)
 - **Frontend**: Vanilla HTML5, CSS3 (Custom Design System), JavaScript (Modern ES6+)
 
@@ -60,7 +64,11 @@
    ```bash
    python seed_questions.py
    ```
-6. Start the Flask server:
+6. Embed the question bank for semantic search (re-runs only embed new/edited questions):
+   ```bash
+   python backfill_embeddings.py --report
+   ```
+7. Start the Flask server:
    ```bash
    python run.py
    ```

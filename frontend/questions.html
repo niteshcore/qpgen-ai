@@ -98,6 +98,22 @@
             border: 1px solid var(--border);
         }
 
+        .b-sim {
+            background: var(--brand-dim);
+            color: var(--brand);
+        }
+
+        .dup-warn {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: rgba(230,126,34,0.1);
+            border: 1px solid rgba(230,126,34,0.3);
+            color: #d35400;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
         .q-body {
             font-size: 1.05em;
             color: var(--text-primary);
@@ -288,9 +304,12 @@
                             <option value="create">Creating</option>
                         </select>
                         <div style="position: relative;">
-                            <input type="text" id="qSearch" placeholder="Search keywords..." oninput="loadQ()"
-                                style="padding-left: 44px; width: 100%; height: 42px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px;">
+                            <input type="text" id="qSearch" placeholder="Keywords, or Enter for AI search" oninput="loadQ()"
+                                onkeydown="if (event.key === 'Enter') semanticSearch()"
+                                style="padding-left: 44px; padding-right: 64px; width: 100%; height: 42px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px;">
                             <span style="position: absolute; left: 16px; top: 12px; color: var(--brand); opacity: 0.6;">⌕</span>
+                            <button id="semBtn" onclick="semanticSearch()" title="Search by meaning, not exact words"
+                                style="position: absolute; right: 6px; top: 6px; height: 30px; padding: 0 10px; border: none; border-radius: 6px; background: var(--brand-dim); color: var(--brand); font-size: 0.75em; font-weight: 700; cursor: pointer;">✨ AI</button>
                         </div>
                     </div>
                     
@@ -434,6 +453,7 @@
         <div id="aiPreview" style="display:none; background:var(--brand-dim); padding:24px; border-radius: var(--radius); border: 1px solid var(--brand-light);">
             <div style="font-size:0.7em; color:var(--brand); margin-bottom:12px; font-family:'DM Mono'; font-weight: 700; letter-spacing: 1px;">GENERATED</div>
             <div id="aiPrevText" style="font-size:0.95em; line-height:1.6; color: var(--text-primary);"></div>
+            <div id="aiDupWarn" class="dup-warn" style="display:none;"></div>
         </div>
     </aside>
 
@@ -465,13 +485,39 @@
         }
 
         let questions = [], selectedQuestions = [];
+        let semantic = null; // { query, results: [question + _sim] } while AI search is active
+
+        const esc = (t) => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        function describeDuplicates(similar) {
+            return similar.map(m => `#${m.question.id} (${Math.round(m.similarity * 100)}% similar): “${esc(m.question.text.slice(0, 120))}”`).join('<br>');
+        }
+
+        async function semanticSearch() {
+            const text = document.getElementById('qSearch').value.trim();
+            if (!text) return;
+            const btn = document.getElementById('semBtn');
+            const sid = document.getElementById('fSub').value;
+            btn.disabled = true; btn.textContent = '…';
+            try {
+                const res = await fetch(`${API}/questions/similar`, {
+                    method: 'POST', headers,
+                    body: JSON.stringify({ text, limit: 20, ...(sid ? { subject_id: parseInt(sid) } : {}) })
+                });
+                const d = await res.json();
+                if (!res.ok) return alert(d.message || d.error || 'AI search failed.');
+                semantic = { query: text, results: d.matches.map(m => ({ ...m.question, _sim: m.similarity })) };
+                renderQ();
+            } catch { alert('AI search failed.'); }
+            finally { btn.disabled = false; btn.textContent = '✨ AI'; }
+        }
         
         function toggleSelect(qid) {
             const index = selectedQuestions.findIndex(q => q.id === qid);
             if (index > -1) {
                 selectedQuestions.splice(index, 1);
             } else {
-                const q = questions.find(q => q.id === qid);
+                const q = questions.find(q => q.id === qid) || (semantic && semantic.results.find(q => q.id === qid));
                 selectedQuestions.push(q);
             }
             updateCart();
@@ -509,11 +555,13 @@
             const search = document.getElementById('qSearch').value.toLowerCase();
             const container = document.getElementById('qContainer');
 
-            let filtered = questions;
-            if (bloom) filtered = filtered.filter(q => q.blooms_level === bloom);
-            if (search) filtered = filtered.filter(q => q.text.toLowerCase().includes(search));
+            if (semantic && semantic.query.toLowerCase() !== search) semantic = null;
 
-            document.getElementById('subCount').textContent = `${filtered.length} question${filtered.length === 1 ? '' : 's'} found`;
+            let filtered = semantic ? semantic.results : questions;
+            if (bloom) filtered = filtered.filter(q => q.blooms_level === bloom);
+            if (search && !semantic) filtered = filtered.filter(q => q.text.toLowerCase().includes(search));
+
+            document.getElementById('subCount').textContent = `${filtered.length} question${filtered.length === 1 ? '' : 's'} found${semantic ? ' · ranked by meaning' : ''}`;
 
             if (filtered.length === 0) {
                 container.innerHTML = `<div style="padding:100px; text-align:center; color:var(--text-muted); font-size:0.9em; font-family:'DM Mono';">ARCHIVE EMPTY</div>`;
@@ -533,6 +581,7 @@
                                 <span class="badge b-bloom">${q.blooms_level}</span>
                                 <span class="badge b-diff">${q.difficulty}</span>
                                 <span class="badge b-marks">${q.marks} PTS</span>
+                                ${q._sim != null ? `<span class="badge b-sim">${Math.round(q._sim * 100)}% match</span>` : ''}
                             </div>
                         </div>
                         <div class="q-body">${q.text}</div>
@@ -564,6 +613,15 @@
             btn.disabled = true;
 
             try {
+                // Semantic duplicate check — best-effort; if it's unavailable we just save.
+                const dupRes = await fetch(`${API}/questions/similar`, {
+                    method: 'POST', headers, body: JSON.stringify({ text: payload.text, subject_id: payload.subject_id, limit: 3 })
+                }).catch(() => null);
+                if (dupRes && dupRes.ok) {
+                    const dups = (await dupRes.json()).matches.filter(m => m.is_duplicate);
+                    if (dups.length && !confirm(`This looks like a question already in the bank:\n\n${dups.map(m => `#${m.question.id} (${Math.round(m.similarity * 100)}% similar): ${m.question.text.slice(0, 120)}`).join('\n')}\n\nSave anyway?`)) return;
+                }
+
                 const res = await fetch(`${API}/teacher/questions`, {
                     method: 'POST', headers, body: JSON.stringify(payload)
                 });
@@ -648,6 +706,10 @@
                 const d = await res.json();
                 if (res.ok) {
                     prevText.textContent = d.data.text;
+                    const dupWarn = document.getElementById('aiDupWarn');
+                    const dups = d.similar_existing || [];
+                    dupWarn.innerHTML = dups.length ? `⚠ Very similar to existing:<br>${describeDuplicates(dups)}` : '';
+                    dupWarn.style.display = dups.length ? 'block' : 'none';
                     preview.style.display = 'block';
                     loadQ();
                 } else alert(d.message);
