@@ -11,6 +11,7 @@ missing or the call fails, the question is still saved and the backfill
 script (`backfill_embeddings.py`) can catch it up later.
 """
 import hashlib
+import logging
 import os
 import time
 
@@ -20,6 +21,8 @@ import sqlalchemy as sa
 from app.extensions import db
 from app.models.question import Question
 from app.models.question_embedding import QuestionEmbedding, EmbeddingVector
+
+logger = logging.getLogger(__name__)
 
 EMBEDDING_MODEL = 'models/gemini-embedding-001'
 EMBEDDING_DIM = QuestionEmbedding.DIM
@@ -139,14 +142,25 @@ def index_questions(questions, vectors=None):
 
 
 def index_questions_best_effort(questions, vectors=None):
-    """index_questions + commit, never raising. Returns True if embeddings were stored."""
+    """
+    index_questions + commit, never raising. Returns True if embeddings were stored.
+
+    On failure, the affected questions stay unembedded (invisible to semantic
+    search / duplicate detection) until someone reruns backfill_embeddings.py —
+    there's no automatic retry. Logged at WARNING for the expected case (no
+    API key / quota, see EmbeddingUnavailable) and ERROR with a traceback for
+    anything else, so an operator watching logs can tell "known, ignorable"
+    apart from "investigate this."
+    """
     try:
         index_questions(questions, vectors)
         db.session.commit()
         return True
     except Exception as e:
         db.session.rollback()
-        print(f'Embedding skipped: {e}')
+        ids = [q.id for q in questions if q.id is not None]
+        log = logger.warning if isinstance(e, EmbeddingUnavailable) else logger.error
+        log('Embedding skipped for question(s) %s: %s', ids, e, exc_info=not isinstance(e, EmbeddingUnavailable))
         return False
 
 
@@ -201,7 +215,8 @@ def check_duplicates_best_effort(text, subject_ids=None, limit=3):
         matches = find_similar(vector, subject_ids=subject_ids, limit=limit, min_score=DUPLICATE_THRESHOLD)
         return vector, matches
     except Exception as e:
-        print(f'Duplicate check skipped: {e}')
+        log = logger.warning if isinstance(e, EmbeddingUnavailable) else logger.error
+        log('Duplicate check skipped: %s', e, exc_info=not isinstance(e, EmbeddingUnavailable))
         return None, []
 
 
