@@ -31,6 +31,14 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = db_url
     SQLALCHEMY_ECHO = False
 
+    # Supabase (and most managed Postgres) silently drops idle connections.
+    # Without pre_ping, the first query after any idle gap raises
+    # "server closed the connection unexpectedly" instead of just reconnecting.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 280,
+    }
+
 
 class TestingConfig(Config):
     TESTING = True
