@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from app.extensions import db
 from app.models.question import Question
 from app.models.subject import Subject
@@ -171,7 +171,7 @@ def create_question():
 
     db.session.add(question)
     db.session.commit()
-    embedding_service.index_questions_best_effort([question])
+    embedding_service.index_questions_background(current_app._get_current_object(), [question.id])
     log_action('question.create', resource_type='question', resource_id=question.id,
                details={'subject_id': question.subject_id, 'question_type': question.question_type})
 
@@ -205,7 +205,7 @@ def update_question(question_id):
     question.correct_answer = data.get('correct_answer', question.correct_answer)
 
     db.session.commit()
-    embedding_service.index_questions_best_effort([question])  # no-op unless the text changed
+    embedding_service.index_questions_background(current_app._get_current_object(), [question.id])  # no-op unless the text changed
     log_action('question.update', resource_type='question', resource_id=question.id)
 
     return jsonify({
@@ -435,7 +435,7 @@ def bulk_upload_questions():
             count += 1
 
         db.session.commit()
-        embedding_service.index_questions_best_effort(created)
+        embedding_service.index_questions_background(current_app._get_current_object(), [q.id for q in created])
         log_action('questions.bulk_upload', details={'count': count, 'skipped': len(skipped_rows)})
         
         response = {

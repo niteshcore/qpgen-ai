@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from app.extensions import db
 from app.models.question import Question
 from app.models.subject import Subject
@@ -115,7 +115,7 @@ def add_question():
     db.session.add(question)
     db.session.commit()
     if vector is not None:
-        embedding_service.index_questions_best_effort([question], vectors=[vector])
+        embedding_service.index_questions_background(current_app._get_current_object(), [question.id], vectors=[vector])
     
     log_action('teacher.question.create', resource_type='question', resource_id=question.id,
                details={'subject_id': subject_id, 'manual': True})
@@ -194,7 +194,7 @@ def generate_and_save_question():
         db.session.add(question)
         db.session.commit()
         if vector is not None:
-            embedding_service.index_questions_best_effort([question], vectors=[vector])
+            embedding_service.index_questions_background(current_app._get_current_object(), [question.id], vectors=[vector])
         
         log_action('teacher.question.generate_ai', resource_type='question', resource_id=question.id,
                    details={'subject_id': subject_id, 'topic': topic, 'near_duplicates': len(duplicates)})

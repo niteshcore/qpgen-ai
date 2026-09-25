@@ -14,6 +14,7 @@ import hashlib
 import logging
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import sqlalchemy as sa
@@ -23,6 +24,12 @@ from app.models.question import Question
 from app.models.question_embedding import QuestionEmbedding, EmbeddingVector
 
 logger = logging.getLogger(__name__)
+
+# Bounded pool for fire-and-forget embedding work (see index_questions_background).
+# Small on purpose: this project's traffic is low, and Gemini's free tier is
+# rate-limited anyway, so a handful of workers is plenty and keeps memory bounded
+# under a burst (e.g. several bulk uploads landing close together).
+_background_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix='embed-bg')
 
 EMBEDDING_MODEL = 'models/gemini-embedding-001'
 EMBEDDING_DIM = QuestionEmbedding.DIM
@@ -162,6 +169,55 @@ def index_questions_best_effort(questions, vectors=None):
         log = logger.warning if isinstance(e, EmbeddingUnavailable) else logger.error
         log('Embedding skipped for question(s) %s: %s', ids, e, exc_info=not isinstance(e, EmbeddingUnavailable))
         return False
+
+
+def index_questions_background(app, question_ids, vectors=None):
+    """
+    Fire-and-forget version of index_questions_best_effort: schedules the
+    work on a background thread pool and returns immediately, so a request
+    that only needs the question saved doesn't also wait on a Gemini round
+    trip (or, for a large bulk upload, several of them).
+
+    Only use this where nothing in the HTTP response depends on the result —
+    the caller gets nothing back, by design, since the request will usually
+    have already returned by the time this runs. Where the response DOES
+    need the outcome (e.g. a duplicate-check the UI shows before saving),
+    call index_questions_best_effort synchronously instead, same as before.
+
+    SQLAlchemy model instances and sessions aren't safe to hand to another
+    thread, so only plain ints (`question_ids`) and, when a synchronous
+    duplicate-check already computed them, raw vectors cross the boundary —
+    the questions themselves are re-fetched inside the background thread's
+    own app context (its own scoped session).
+
+    Under the 'testing' config this runs inline instead of on the thread
+    pool. TestingConfig points at sqlite:///:memory:, and a fresh connection
+    from another thread gets its own empty in-memory database rather than
+    the one the test just wrote to — so a real background thread wouldn't
+    see the question at all, and would look like a silent no-op rather than
+    a race. Every other config (dev's file-backed SQLite, production's
+    Postgres) is a real shared database and genuinely backgrounds.
+    """
+    question_ids = [q.id if isinstance(q, Question) else q for q in question_ids]
+
+    def _run():
+        with app.app_context():
+            rows = Question.query.filter(Question.id.in_(question_ids)).all()
+            by_id = {q.id: q for q in rows}
+            ordered = [by_id[i] for i in question_ids if i in by_id]
+            aligned_vectors = vectors
+            if vectors is not None and len(ordered) != len(question_ids):
+                # A question vanished between scheduling and running (e.g. deleted
+                # immediately after creation) — vectors were positional against the
+                # original id list, so realign them rather than pass a mismatched list.
+                id_to_vector = dict(zip(question_ids, vectors))
+                aligned_vectors = [id_to_vector[q.id] for q in ordered]
+            index_questions_best_effort(ordered, vectors=aligned_vectors)
+
+    if app.config.get('TESTING'):
+        _run()
+    else:
+        _background_executor.submit(_run)
 
 
 def find_similar(vector, subject_ids=None, limit=5, exclude_ids=(), min_score=0.0):
