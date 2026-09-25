@@ -17,10 +17,27 @@ depends_on = None
 EMBEDDING_DIM = 768
 
 
+def _table_exists_in_current_schema(bind, table_name):
+    """
+    Schema-scoped existence check. Inspector.get_table_names() without a
+    schema= argument uses pg_table_is_visible(), which matches a table
+    visible through ANY schema on search_path — not just the one DDL
+    actually targets. That false-positives whenever another schema on the
+    path (e.g. a shared database with multiple app environments) happens to
+    already have a same-named table, silently skipping this migration.
+    """
+    if bind.dialect.name != 'postgresql':
+        return table_name in sa.inspect(bind).get_table_names()
+    return bind.execute(sa.text(
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema = current_schema() AND table_name = :name"
+    ), {'name': table_name}).first() is not None
+
+
 def upgrade():
     bind = op.get_bind()
     # Local SQLite dev DBs get this table from db.create_all() on startup.
-    if 'question_embeddings' in sa.inspect(bind).get_table_names():
+    if _table_exists_in_current_schema(bind, 'question_embeddings'):
         return
 
     is_postgres = bind.dialect.name == 'postgresql'

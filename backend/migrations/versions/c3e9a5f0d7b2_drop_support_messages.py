@@ -15,8 +15,26 @@ branch_labels = None
 depends_on = None
 
 
+def _table_exists_in_current_schema(bind, table_name):
+    # Schema-scoped on purpose — see the same helper in
+    # d4a7b1e9f3c2_add_question_embeddings.py for why get_table_names()
+    # without a schema= argument isn't safe to use here.
+    if bind.dialect.name != 'postgresql':
+        return table_name in sa.inspect(bind).get_table_names()
+    return bind.execute(sa.text(
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema = current_schema() AND table_name = :name"
+    ), {'name': table_name}).first() is not None
+
+
 def upgrade():
-    op.drop_table('support_messages')
+    # support_messages, like several other tables in this project's early history,
+    # was only ever created via db.create_all() on local SQLite (see app/__init__.py) —
+    # it has no CREATE TABLE migration, so a fresh Postgres database reaching this
+    # point never has it. Guard the drop so `flask db upgrade` works from empty.
+    bind = op.get_bind()
+    if _table_exists_in_current_schema(bind, 'support_messages'):
+        op.drop_table('support_messages')
 
 
 def downgrade():

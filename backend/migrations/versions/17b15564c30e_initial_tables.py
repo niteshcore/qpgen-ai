@@ -1,9 +1,21 @@
 """initial tables
 
 Revision ID: 17b15564c30e
-Revises: 
+Revises:
 Create Date: 2026-02-20 23:30:55.422463
 
+NOTE (added later, see d4a7b1e9f3c2's sibling fix commit): this migration was
+originally missing 7 tables — permissions, roles, role_permissions,
+user_roles, teacher_subjects, audit_logs, subject_requests — and the
+questions.topic column. They existed in every real deployment anyway because
+local/dev SQLite bootstraps its schema straight from the models
+(db.create_all(), see app/__init__.py) rather than through Alembic, so nobody
+ever ran `flask db upgrade` against a truly empty Postgres database until
+then — at which point every migration after this one that ALTERs
+subject_requests or expects a topic column would fail with
+"relation ... does not exist". This file now creates the full schema that
+was always implicitly expected, in the pre-c8910b936d04 shape (i.e. without
+the subject_requests columns and questions.topic that later migrations add).
 """
 from alembic import op
 import sqlalchemy as sa
@@ -65,6 +77,7 @@ def upgrade():
     sa.Column('option_c', sa.String(length=255), nullable=True),
     sa.Column('option_d', sa.String(length=255), nullable=True),
     sa.Column('correct_answer', sa.String(length=255), nullable=True),
+    sa.Column('topic', sa.String(length=200), nullable=True),
     sa.Column('subject_id', sa.Integer(), nullable=False),
     sa.Column('created_by', sa.Integer(), nullable=False),
     sa.Column('times_used', sa.Integer(), nullable=True),
@@ -81,11 +94,94 @@ def upgrade():
     sa.ForeignKeyConstraint(['question_id'], ['questions.id'], ),
     sa.PrimaryKeyConstraint('paper_id', 'question_id')
     )
+
+    # ── RBAC + audit + teacher-assignment tables ──────────────────────
+    # (missing from this migration originally — see module docstring)
+    op.create_table('permissions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=64), nullable=False),
+    sa.Column('resource', sa.String(length=32), nullable=False),
+    sa.Column('action', sa.String(length=32), nullable=False),
+    sa.Column('description', sa.String(length=255), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name'),
+    sa.UniqueConstraint('resource', 'action', name='uq_permission_resource_action')
+    )
+    op.create_table('roles',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=32), nullable=False),
+    sa.Column('description', sa.String(length=255), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    op.create_table('role_permissions',
+    sa.Column('role_id', sa.Integer(), nullable=False),
+    sa.Column('permission_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['permission_id'], ['permissions.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('role_id', 'permission_id')
+    )
+    op.create_table('user_roles',
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('role_id', sa.Integer(), nullable=False),
+    sa.Column('assigned_at', sa.DateTime(timezone=True), nullable=True),
+    sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('user_id', 'role_id')
+    )
+    op.create_table('teacher_subjects',
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('subject_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['subject_id'], ['subjects.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('user_id', 'subject_id')
+    )
+    op.create_table('audit_logs',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('timestamp', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('action', sa.String(length=100), nullable=False),
+    sa.Column('resource_type', sa.String(length=50), nullable=True),
+    sa.Column('resource_id', sa.Integer(), nullable=True),
+    sa.Column('details', sa.JSON(), nullable=True),
+    sa.Column('ip_address', sa.String(length=45), nullable=True),
+    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_audit_logs_action'), 'audit_logs', ['action'], unique=False)
+    op.create_index(op.f('ix_audit_logs_timestamp'), 'audit_logs', ['timestamp'], unique=False)
+    op.create_index(op.f('ix_audit_logs_user_id'), 'audit_logs', ['user_id'], unique=False)
+    # Pre-c8910b936d04 shape: that migration adds request_type/subject_name/
+    # subject_code/subject_description/topics and relaxes subject_id to nullable.
+    op.create_table('subject_requests',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('subject_id', sa.Integer(), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=True),
+    sa.Column('admin_notes', sa.Text(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.ForeignKeyConstraint(['subject_id'], ['subjects.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('subject_requests')
+    op.drop_index(op.f('ix_audit_logs_user_id'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_timestamp'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_action'), table_name='audit_logs')
+    op.drop_table('audit_logs')
+    op.drop_table('teacher_subjects')
+    op.drop_table('user_roles')
+    op.drop_table('role_permissions')
+    op.drop_table('roles')
+    op.drop_table('permissions')
     op.drop_table('paper_questions')
     op.drop_table('questions')
     op.drop_table('papers')

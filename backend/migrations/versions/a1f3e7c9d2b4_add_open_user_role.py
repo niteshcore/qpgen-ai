@@ -59,6 +59,17 @@ def upgrade():
     if existing:
         return
 
+    # Skip entirely on a database that has never been seeded (roles table
+    # completely empty): app._seed_initial_data() creates all four roles,
+    # including 'user' with the correct permissions, in one pass. Running
+    # both would insert 'user' twice and crash on the unique constraint —
+    # and even if it didn't crash, this migration's copy would have zero
+    # permissions attached, since `permissions` is seeded by the same
+    # function and is also still empty at this point.
+    any_role = bind.execute(sa.select(roles.c.id).limit(1)).first()
+    if not any_role:
+        return
+
     bind.execute(
         roles.insert().values(
             name='user',
