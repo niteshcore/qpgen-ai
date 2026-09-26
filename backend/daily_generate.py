@@ -200,6 +200,12 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')
+    # Fail with a clear message rather than silently falling back to an empty local database
+    # (which is what happens on GitHub Actions when a repository secret is missing or misspelled).
+    if not (os.getenv('DATABASE_URL') or '').strip():
+        sys.exit('DATABASE_URL is not set. On GitHub add it under Settings > Secrets and variables > Actions.')
+    if not args.dry_run and not (os.getenv('GOOGLE_API_KEY') or '').strip():
+        sys.exit('GOOGLE_API_KEY is not set. On GitHub add it under Settings > Secrets and variables > Actions.')
     app = create_app('production')
     with app.app_context():
         admin = User.query.filter(db.func.lower(User.email) == os.getenv('ADMIN_EMAIL', 'admin@qpgen.com').lower()).first()
