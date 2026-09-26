@@ -1,0 +1,40 @@
+name: Daily library top-up
+
+# Adds a few AI-written questions and public papers each day so the library keeps growing.
+# Needs two repository secrets (Settings > Secrets and variables > Actions):
+#   DATABASE_URL    Supabase Session-pooler connection string (same one Render uses)
+#   GOOGLE_API_KEY  Gemini API key
+on:
+  schedule:
+    - cron: "30 3 * * *"   # every day, 03:30 UTC (09:00 IST)
+  workflow_dispatch:
+    inputs:
+      subjects:
+        description: "How many subjects to generate for"
+        default: "2"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - run: pip install -r requirements.txt
+
+      - name: Generate
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          # The production config insists on real-looking secrets, but this job never issues logins.
+          SECRET_KEY: not-used-by-this-job
+          JWT_SECRET_KEY: not-used-by-this-job
+          DAILY_SUBJECTS: ${{ github.event.inputs.subjects || '2' }}
+        run: python daily_generate.py
