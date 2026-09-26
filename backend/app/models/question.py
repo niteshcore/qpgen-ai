@@ -33,6 +33,14 @@ class Question(db.Model):
     times_used = db.Column(db.Integer, default=0)  # tracks usage for smart selection
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+    # Provenance for RAG-generated questions — null for every other question.
+    # ON DELETE SET NULL: deleting the source document shouldn't delete the
+    # question it produced, just the "grounded in X, p.Y" citation on it.
+    source_document_id = db.Column(db.Integer, db.ForeignKey('source_documents.id', ondelete='SET NULL'), nullable=True)
+    source_page = db.Column(db.Integer, nullable=True)
+
+    source_document = db.relationship('SourceDocument', backref=db.backref('generated_questions', lazy=True))
+
     # Bloom's levels as a constant — single source of truth
     BLOOMS_LEVELS = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create']
     DIFFICULTY_LEVELS = ['easy', 'medium', 'hard']
@@ -57,7 +65,10 @@ class Question(db.Model):
             'subject_name': self.subject.name if self.subject else 'Uncategorized',
             'topic': self.topic,
             'times_used': self.times_used,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat(),
+            'source_document_id': self.source_document_id,
+            'source_document_name': self.source_document.filename if self.source_document else None,
+            'source_page': self.source_page,
         }
 
     def __repr__(self):

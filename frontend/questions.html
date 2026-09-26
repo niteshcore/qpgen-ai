@@ -422,38 +422,95 @@
             <div class="ai-title">AI Assistant</div>
             <div class="close-btn" onclick="toggleAI()" style="position: static;">✕</div>
         </div>
-        <p style="font-size:0.9em; color:var(--text-secondary); line-height:1.6;">Generates a new question for this subject using AI.</p>
+        <div style="display:flex; gap:4px; background:var(--surface-alt); padding:4px; border-radius:8px; margin-bottom:20px;">
+            <button type="button" id="aiModeTopic" onclick="setAiMode('topic')"
+                style="flex:1; padding:8px; border:none; border-radius:6px; cursor:pointer; font-family:'DM Mono'; font-size:0.7em; font-weight:700; letter-spacing:0.5px; background:white; color:var(--brand); box-shadow:var(--shadow-sm);">FROM TOPIC</button>
+            <button type="button" id="aiModeDoc" onclick="setAiMode('document')"
+                style="flex:1; padding:8px; border:none; border-radius:6px; cursor:pointer; font-family:'DM Mono'; font-size:0.7em; font-weight:700; letter-spacing:0.5px; background:transparent; color:var(--text-muted);">FROM DOCUMENT ✨</button>
+        </div>
 
-        <div class="form-group">
-            <label>Subject</label>
-            <select id="aiSub"></select>
-        </div>
-        <div class="form-group">
-            <label>Topic</label>
-            <input type="text" id="aiTopic" placeholder="Normalization, Indexing, B-Trees...">
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+        <div id="aiTopicBlock">
+            <p style="font-size:0.9em; color:var(--text-secondary); line-height:1.6;">Generates a new question for this subject using AI.</p>
+
             <div class="form-group">
-                <label>Question Type</label>
-                <select id="aiType">
-                    <option value="mcq">MCQ</option>
-                    <option value="short">Short</option>
-                    <option value="long">Long</option>
-                </select>
+                <label>Subject</label>
+                <select id="aiSub"></select>
             </div>
             <div class="form-group">
-                <label>Marks</label>
-                <input type="number" id="aiMarks" value="5">
+                <label>Topic</label>
+                <input type="text" id="aiTopic" placeholder="Normalization, Indexing, B-Trees...">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div class="form-group">
+                    <label>Question Type</label>
+                    <select id="aiType">
+                        <option value="mcq">MCQ</option>
+                        <option value="short">Short</option>
+                        <option value="long">Long</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Marks</label>
+                    <input type="number" id="aiMarks" value="5">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%;" onclick="generateAI()" id="aiBtn">Generate Question</button>
+            <div id="aiLoading" class="loading-dots">Generating…</div>
+
+            <div id="aiPreview" style="display:none; background:var(--brand-dim); padding:24px; border-radius: var(--radius); border: 1px solid var(--brand-light);">
+                <div style="font-size:0.7em; color:var(--brand); margin-bottom:12px; font-family:'DM Mono'; font-weight: 700; letter-spacing: 1px;">GENERATED</div>
+                <div id="aiPrevText" style="font-size:0.95em; line-height:1.6; color: var(--text-primary);"></div>
+                <div id="aiDupWarn" class="dup-warn" style="display:none;"></div>
             </div>
         </div>
 
-        <button class="btn btn-primary" style="width:100%;" onclick="generateAI()" id="aiBtn">Generate Question</button>
-        <div id="aiLoading" class="loading-dots">Generating…</div>
+        <div id="aiDocBlock" style="display:none;">
+            <p style="font-size:0.9em; color:var(--text-secondary); line-height:1.6;">Upload course material (PDF) and generate questions grounded in it — every question is checked against the actual text and cites its source page.</p>
 
-        <div id="aiPreview" style="display:none; background:var(--brand-dim); padding:24px; border-radius: var(--radius); border: 1px solid var(--brand-light);">
-            <div style="font-size:0.7em; color:var(--brand); margin-bottom:12px; font-family:'DM Mono'; font-weight: 700; letter-spacing: 1px;">GENERATED</div>
-            <div id="aiPrevText" style="font-size:0.95em; line-height:1.6; color: var(--text-primary);"></div>
-            <div id="aiDupWarn" class="dup-warn" style="display:none;"></div>
+            <div class="form-group">
+                <label>Subject</label>
+                <select id="ragSub" onchange="loadDocuments()"></select>
+            </div>
+
+            <div class="form-group">
+                <label>Course Material</label>
+                <select id="ragDoc"></select>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-bottom:20px;">
+                <input type="file" id="ragFile" accept="application/pdf" style="flex:1; font-size:0.8em;">
+                <button type="button" class="btn btn-outline" style="padding:8px 16px; white-space:nowrap;" onclick="uploadDocument()" id="ragUploadBtn">Upload</button>
+            </div>
+            <div id="ragUploadMsg" style="font-size:0.8em; margin-bottom:12px;"></div>
+
+            <div class="form-group">
+                <label>Focus Topic</label>
+                <input type="text" id="ragTopic" placeholder="e.g. photosynthesis, deadlock handling...">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div class="form-group">
+                    <label>Question Type</label>
+                    <select id="ragType">
+                        <option value="mcq">MCQ</option>
+                        <option value="short" selected>Short</option>
+                        <option value="long">Long</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Marks</label>
+                    <input type="number" id="ragMarks" value="3">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>How many questions</label>
+                <input type="number" id="ragCount" value="2" min="1" max="10">
+            </div>
+
+            <button class="btn btn-primary" style="width:100%;" onclick="generateFromDocument()" id="ragBtn">Generate Grounded Questions</button>
+            <div id="ragLoading" class="loading-dots">Retrieving passages &amp; generating…</div>
+
+            <div id="ragResults"></div>
         </div>
     </aside>
 
@@ -481,7 +538,111 @@
                 document.getElementById('fSub').innerHTML = '<option value="">All Subjects</option>' + options;
                 document.getElementById('mSub').innerHTML = options;
                 document.getElementById('aiSub').innerHTML = options;
+                document.getElementById('ragSub').innerHTML = options;
+                if (subjects.length) loadDocuments();
             } catch (e) { console.error('Subject link failed:', e); }
+        }
+
+        function setAiMode(mode) {
+            const isDoc = mode === 'document';
+            document.getElementById('aiTopicBlock').style.display = isDoc ? 'none' : 'block';
+            document.getElementById('aiDocBlock').style.display = isDoc ? 'block' : 'none';
+            document.getElementById('aiModeTopic').style.background = isDoc ? 'transparent' : 'white';
+            document.getElementById('aiModeTopic').style.color = isDoc ? 'var(--text-muted)' : 'var(--brand)';
+            document.getElementById('aiModeDoc').style.background = isDoc ? 'white' : 'transparent';
+            document.getElementById('aiModeDoc').style.color = isDoc ? 'var(--brand)' : 'var(--text-muted)';
+        }
+
+        async function loadDocuments() {
+            const sid = document.getElementById('ragSub').value;
+            if (!sid) return;
+            try {
+                const res = await fetch(`${API}/documents?subject_id=${sid}`, { headers });
+                const data = await res.json();
+                const docs = data.documents || [];
+                const sel = document.getElementById('ragDoc');
+                if (!docs.length) {
+                    sel.innerHTML = '<option value="">No material uploaded yet — upload a PDF below</option>';
+                    return;
+                }
+                sel.innerHTML = docs.map(d => {
+                    const statusTag = d.status === 'ready' ? '' : d.status === 'processing' ? ' (processing…)' : ' (failed)';
+                    return `<option value="${d.id}" ${d.status !== 'ready' ? 'disabled' : ''}>${d.title}${statusTag}</option>`;
+                }).join('');
+            } catch (e) { console.error('Document list failed:', e); }
+        }
+
+        async function uploadDocument() {
+            const sid = document.getElementById('ragSub').value;
+            const fileInput = document.getElementById('ragFile');
+            const msg = document.getElementById('ragUploadMsg');
+            if (!sid) return alert('Pick a subject first.');
+            if (!fileInput.files[0]) return alert('Choose a PDF file first.');
+
+            const btn = document.getElementById('ragUploadBtn');
+            btn.disabled = true; btn.textContent = 'Uploading…';
+            msg.style.color = 'var(--text-muted)'; msg.textContent = 'Extracting text and embedding pages…';
+
+            const formData = new FormData();
+            formData.append('subject_id', sid);
+            formData.append('file', fileInput.files[0]);
+            formData.append('title', fileInput.files[0].name.replace(/\.pdf$/i, ''));
+
+            try {
+                const res = await fetch(`${API}/documents/upload`, {
+                    method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    msg.style.color = '#27ae60';
+                    msg.textContent = `Uploaded "${d.document.title}" (${d.document.page_count} pages) — processing in background.`;
+                    fileInput.value = '';
+                    loadDocuments();
+                    setTimeout(loadDocuments, 4000); // one refresh once background embedding likely finished
+                } else {
+                    msg.style.color = '#e74c3c'; msg.textContent = d.error || 'Upload failed.';
+                }
+            } catch { msg.style.color = '#e74c3c'; msg.textContent = 'Upload failed.'; }
+            finally { btn.disabled = false; btn.textContent = 'Upload'; }
+        }
+
+        async function generateFromDocument() {
+            const docId = document.getElementById('ragDoc').value;
+            const topic = document.getElementById('ragTopic').value.trim();
+            const btn = document.getElementById('ragBtn');
+            const loader = document.getElementById('ragLoading');
+            const results = document.getElementById('ragResults');
+
+            if (!docId) return alert('Pick a ready course-material document first.');
+            if (!topic) return alert('Enter a focus topic.');
+
+            btn.disabled = true; loader.style.display = 'block'; results.innerHTML = '';
+            try {
+                const res = await fetch(`${API}/documents/${docId}/generate`, {
+                    method: 'POST', headers,
+                    body: JSON.stringify({
+                        topic,
+                        question_type: document.getElementById('ragType').value,
+                        marks: parseInt(document.getElementById('ragMarks').value),
+                        count: parseInt(document.getElementById('ragCount').value),
+                    })
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    results.innerHTML = d.questions.map(q => `
+                        <div style="background:var(--brand-dim); padding:16px; border-radius:var(--radius); border:1px solid var(--brand-light); margin-top:12px;">
+                            <div style="font-size:0.95em; line-height:1.5; color:var(--text-primary); margin-bottom:8px;">${esc(q.text)}</div>
+                            <div style="font-size:0.7em; font-family:'DM Mono'; color:var(--brand); text-transform:uppercase; letter-spacing:0.5px;">
+                                ${q.source_page ? `📄 Grounded in ${esc(q.source_document_name)}, page ${q.source_page}` : '⚠ No specific page citation'}
+                            </div>
+                        </div>
+                    `).join('');
+                    loadQ();
+                } else {
+                    results.innerHTML = `<div style="color:#e74c3c; font-size:0.85em; padding:12px 0;">${esc(d.error || 'Generation failed.')}</div>`;
+                }
+            } catch { results.innerHTML = '<div style="color:#e74c3c; font-size:0.85em;">Generation failed.</div>'; }
+            finally { btn.disabled = false; loader.style.display = 'none'; }
         }
 
         let questions = [], selectedQuestions = [];

@@ -22,6 +22,10 @@
 - **Semantic Search & Duplicate Detection**: Every question is embedded with Gemini (`gemini-embedding-001`, 768-d) and stored in **pgvector** on Postgres (JSON on local SQLite).
   - Search the bank by meaning ("✨ AI" in the search bar), not just keywords.
   - New and AI-generated questions are checked against the bank; near-duplicates (cosine ≥ 0.92, calibrated on the seeded bank) trigger a warning before saving.
+- **RAG-Grounded Generation from Course Material**: Upload a syllabus/notes PDF ("✨ From Document" in the AI sidebar) — it's chunked per page and embedded (`RETRIEVAL_DOCUMENT`/`RETRIEVAL_QUERY` task types) in the background.
+  - Generating from a topic retrieves the most relevant passages (cosine search over the document's chunks) and requires Gemini to answer strictly from them, citing which passage grounds each question.
+  - The citation is verified, not trusted: the model names one of the passage numbers it was given, and the real page number is looked up from that — an out-of-range or missing citation drops the citation rather than the question.
+  - Saved questions carry `source_document_id`/`source_page`, shown in the UI as "Grounded in *file*, page *N*".
 - **AI Paper Generation**: Generate comprehensive exam papers by specifying distributions for Bloom's levels and difficulty levels.
 - **Advanced Dashboard**: Real-time statistics on question availability, subjects, and cognitive domain distribution.
 - **Premium UI**: Sleek, dark-mode professional interface with smooth micro-animations and responsive design.

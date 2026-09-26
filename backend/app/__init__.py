@@ -33,6 +33,7 @@ def create_app(config_name='default'):
     from app.routes.admin import admin_bp
     from app.routes.teacher import teacher_bp
     from app.routes.public import public_bp
+    from app.routes.documents import documents_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(questions_bp, url_prefix='/api/questions')
@@ -40,6 +41,7 @@ def create_app(config_name='default'):
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(teacher_bp, url_prefix='/api/teacher')
+    app.register_blueprint(documents_bp, url_prefix='/api/documents')
     app.register_blueprint(public_bp, url_prefix='/api/public')
     
     # Auto-create tables and seed data ONLY for local/ephemeral SQLite databases.
