@@ -1490,7 +1490,7 @@
                     </div>
                     <div class="field">
                         <label>Password</label>
-                        <input type="password" id="rp" placeholder="Create a strong password">
+                        <input type="password" id="rp" placeholder="At least 8 characters" minlength="8">
                     </div>
                     <button class="btn-auth" onclick="register()">Create Account →</button>
                     <div class="auth-footer-note">Already registered? <a href="#" onclick="setTab('login')"
@@ -1502,6 +1502,8 @@
 
     <script>
         const API = '/api';
+
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
         // Live numbers for the stats bar; rounded down with a "+" so they read as thresholds.
         (async function loadHomeStats() {
@@ -1527,7 +1529,7 @@
         }
 
         async function login() {
-            const email = document.getElementById('le').value;
+            const email = document.getElementById('le').value.trim();
             const password = document.getElementById('lp').value;
             if (!email || !password) return alert('Please fill in all fields.');
             try {
@@ -1536,7 +1538,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-                const d = await res.json();
+                const d = await res.json().catch(() => ({}));
                 if (res.ok) {
                     localStorage.setItem('token', d.access_token);
                     localStorage.setItem('user', JSON.stringify(d.user));
@@ -1550,10 +1552,11 @@
         }
 
         async function register() {
-            const username = document.getElementById('rn').value;
-            const email = document.getElementById('re').value;
+            const username = document.getElementById('rn').value.trim();
+            const email = document.getElementById('re').value.trim();
             const password = document.getElementById('rp').value;
             if (!username || !email || !password) return alert('Please fill in all fields.');
+            if (password.length < 8) return alert('Password must be at least 8 characters.');
             try {
                 const res = await fetch(`${API}/auth/register`, {
                     method: 'POST',
@@ -1561,10 +1564,12 @@
                     body: JSON.stringify({ username, email, password })
                 });
                 if (res.ok) {
-                    alert('Account created! You can now sign in.');
-                    setTab('login');
+                    // Sign the new user straight in instead of making them type it all again.
+                    document.getElementById('le').value = email;
+                    document.getElementById('lp').value = password;
+                    await login();
                 } else {
-                    const d = await res.json();
+                    const d = await res.json().catch(() => ({}));
                     alert(d.error || 'Registration failed. Please try again.');
                 }
             } catch {
@@ -1592,11 +1597,11 @@
 
                 grid.innerHTML = papers.map(p => `
                     <div class="paper-card">
-                        <div class="paper-card-subject">${p.subject_name || 'General'}${p.subject_code ? ' · ' + p.subject_code : ''}</div>
-                        <div class="paper-card-title">${p.title}</div>
+                        <div class="paper-card-subject">${esc(p.subject_name || 'General')}${p.subject_code ? ' · ' + esc(p.subject_code) : ''}</div>
+                        <div class="paper-card-title">${esc(p.title)}</div>
                         <div class="paper-card-meta">${p.total_marks} marks · ${p.question_count} questions</div>
                         <div class="paper-card-footer">
-                            <span class="paper-card-author">by ${p.created_by_username || 'someone'}</span>
+                            <span class="paper-card-author">by ${esc(p.created_by_username || 'someone')}</span>
                             <a class="paper-card-dl" href="${API}/public/papers/${p.id}/pdf" target="_blank" rel="noopener">Download PDF →</a>
                         </div>
                     </div>
@@ -1607,7 +1612,19 @@
         }
         loadLibrary();
 
-        if (localStorage.getItem('token')) window.location.href = 'dashboard.html';
+        // Only skip the landing page if the stored token still works; an expired one
+        // would otherwise bounce the user to a dashboard that can't load, with no way to sign in.
+        (async function resumeSession() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+                if (res.ok) { window.location.href = 'dashboard.html'; return; }
+            } catch { return; }  // server unreachable: stay here, keep the token
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            if (new URLSearchParams(location.search).has('expired')) openAuth('login');
+        })();
     </script>
 </body>
 

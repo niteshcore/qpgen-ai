@@ -62,7 +62,7 @@ def create_paper():
             }
         }
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
     required = ['title', 'subject_id', 'total_marks', 'duration_minutes', 'config']
     if not all(k in data for k in required):
@@ -133,7 +133,7 @@ def manual_generate_paper():
     """
     Create a paper from a manual selection of question IDs.
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     user = get_current_user()
 
     required = ['title', 'subject_id', 'question_ids', 'duration_minutes', 'total_marks']
@@ -210,7 +210,7 @@ def update_paper(paper_id):
     if paper.created_by != user.id and not user.has_role('admin'):
         return jsonify({'error': 'Forbidden', 'message': 'You do not own this paper'}), 403
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
     if 'title' in data:
         paper.title = data['title']
@@ -266,7 +266,7 @@ def generate_ai_syllabus_paper():
     Generate a full paper from a syllabus description using AI.
     Saves all questions to the database.
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     user = get_current_user()
 
     required = ['title', 'subject_id', 'syllabus', 'distribution', 'duration_minutes']

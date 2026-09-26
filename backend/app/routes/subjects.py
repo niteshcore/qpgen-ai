@@ -19,8 +19,19 @@ def get_subjects():
     else:
         subjects = Subject.query.all()
         
+    from sqlalchemy import func
+    from app.extensions import db
+    from app.models.question import Question
+    counts = dict(db.session.query(Question.subject_id, func.count(Question.id)).group_by(Question.subject_id).all())
+
+    subject_dicts = []
+    for s in subjects:
+        d = s.to_dict()
+        d['question_count'] = counts.get(s.id, 0)
+        subject_dicts.append(d)
+
     return jsonify({
-        'subjects': [s.to_dict() for s in subjects],
+        'subjects': subject_dicts,
         'count': len(subjects),
     }), 200
 

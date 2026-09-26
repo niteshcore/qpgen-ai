@@ -383,6 +383,7 @@
     <footer>© 2026 QPGen. All rights reserved.</footer>
 
     <script>
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const API = '/api';
         const PAGE_SIZE = 12;
         let offset = 0;
@@ -450,11 +451,11 @@
             const grid = document.getElementById('resultsGrid');
             const html = papers.map(p => `
                 <div class="paper-card">
-                    <div class="paper-card-subject">${p.subject_name || 'General'}${p.subject_code ? ' · ' + p.subject_code : ''}</div>
-                    <div class="paper-card-title">${p.title}</div>
+                    <div class="paper-card-subject">${esc(p.subject_name || 'General')}${p.subject_code ? ' · ' + esc(p.subject_code) : ''}</div>
+                    <div class="paper-card-title">${esc(p.title)}</div>
                     <div class="paper-card-meta">${p.total_marks} marks · ${p.question_count} questions</div>
                     <div class="paper-card-footer">
-                        <span class="paper-card-author">by ${p.created_by_username || 'someone'}</span>
+                        <span class="paper-card-author">by ${esc(p.created_by_username || 'someone')}</span>
                         <a class="paper-card-dl" href="${API}/public/papers/${p.id}/pdf" target="_blank" rel="noopener">Download PDF →</a>
                     </div>
                 </div>

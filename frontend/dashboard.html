@@ -121,7 +121,9 @@
         </main>
     </div>
 
+    <script src="session.js"></script>
     <script>
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const API = '/api';
         const token = localStorage.getItem('token');
         if (!token) window.location.href = 'index.html';
@@ -224,8 +226,8 @@
                 <div class="paper-item" onclick="location.href='generate.html?paper_id=${p.id}'">
                     <div class="paper-num">${String(i + 1).padStart(2, '0')}</div>
                     <div class="paper-content">
-                        <div class="paper-title">${p.title}</div>
-                        <div class="paper-meta">${p.subject_name || 'General'} · ${p.total_marks} marks · ${p.question_count} questions${isAdmin && p.created_by_username ? ' · by ' + p.created_by_username : ''}</div>
+                        <div class="paper-title">${esc(p.title)}</div>
+                        <div class="paper-meta">${esc(p.subject_name || 'General')} · ${p.total_marks} marks · ${p.question_count} questions${isAdmin && p.created_by_username ? ' · by ' + esc(p.created_by_username) : ''}</div>
                     </div>
                     <button class="share-toggle ${p.is_public ? 'is-public' : ''}" onclick="event.stopPropagation(); toggleShare(${p.id}, ${!!p.is_public})">${p.is_public ? '🌐 Public' : 'Share'}</button>
                     <div class="status-pill status-${(p.status || 'draft').toLowerCase()}">${p.status || 'draft'}</div>

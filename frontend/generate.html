@@ -353,7 +353,7 @@
 
                         <div class="form-group">
                             <label>Subject</label>
-                            <select id="sSub" onchange="loadStats()"></select>
+                            <select id="sSub"></select>
                         </div>
                         <div class="form-group">
                             <label>Paper Title</label>
@@ -456,6 +456,7 @@
                         </div>
                         <button class="btn-gen" style="width:auto; padding:12px 32px; margin-top: 0;" onclick="downloadPdf()">Download PDF ↓</button>
                     </div>
+                    <div id="rWarn" style="display:none; margin:0 0 16px; padding:12px 16px; border-radius:10px; background:#fef3c7; color:#92400e; font-size:0.9em;"></div>
                     <div class="preview-body" id="qList"></div>
                 </div>
             </div>
@@ -467,7 +468,10 @@
         <div style="font-family:'DM Mono'; color:var(--brand); letter-spacing:3px; font-size:0.85em; font-weight: 700;">GENERATING YOUR PAPER…</div>
     </div>
 
+    <script src="session.js"></script>
     <script>
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        let allSubjects = [];
         const API = '/api';
         const token = localStorage.getItem('token');
         if (!token) window.location.href = 'index.html';
@@ -495,14 +499,25 @@
             try {
                 const res = await fetch(`${API}/subjects/`, { headers });
                 const d = await res.json();
-                const list = d.subjects || [];
-                document.getElementById('sSub').innerHTML = list.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                allSubjects = d.subjects || [];
+                fillSubjects();
                 if (mode === 'manual') updateDist(); else updateQuickTotal();
             } catch (e) { console.error(e); }
         }
 
+        // Bank-based modes can only build a paper from subjects that have questions;
+        // AI-syllabus mode writes its own, so every subject is fair game there.
+        function fillSubjects() {
+            const sel = document.getElementById('sSub');
+            const previous = sel.value;
+            const usable = mode === 'ai' ? allSubjects : allSubjects.filter(s => (s.question_count ?? 1) > 0);
+            sel.innerHTML = usable.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+            if (usable.some(s => String(s.id) === previous)) sel.value = previous;
+        }
+
         function setMode(m) {
             mode = m;
+            fillSubjects();
             const buttons = { quick: document.getElementById('modeQuick'), manual: document.getElementById('modeManual'), ai: document.getElementById('modeAI') };
 
             Object.entries(buttons).forEach(([key, btn]) => {
@@ -601,13 +616,13 @@
                 const d = await res.json();
                 if (res.ok) {
                     currentPaper = d.paper;
-                    renderResult(d.paper);
+                    renderResult(d.paper, d.warning);
                 } else alert(d.error || d.message || 'Something went wrong.');
             } catch (e) { alert('Something went wrong. Please try again.'); }
             finally { document.getElementById('neural').style.display = 'none'; }
         }
 
-        function renderResult(p) {
+        function renderResult(p, warning) {
             document.getElementById('result').style.display = 'block';
             document.getElementById('rTitle').textContent = p.title;
             document.getElementById('rSub').textContent = document.getElementById('sSub').options[document.getElementById('sSub').selectedIndex].text.toUpperCase();
@@ -616,12 +631,16 @@
                 <div class="q-preview-item">
                     <div class="q-preview-num">${String(i + 1).padStart(2, '0')}</div>
                     <div class="q-preview-text">
-                        ${q.text}
+                        ${esc(q.text)}
                         <span class="rq-badge b-${q.blooms_level}">${q.blooms_level}</span>
                     </div>
                     <div class="q-preview-marks">${q.marks} PTS</div>
                 </div>
             `).join('');
+
+            const warn = document.getElementById('rWarn');
+            warn.textContent = warning || '';
+            warn.style.display = warning ? 'block' : 'none';
 
             window.scrollTo({ top: document.getElementById('result').offsetTop - 40, behavior: 'smooth' });
         }

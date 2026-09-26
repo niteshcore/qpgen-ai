@@ -58,3 +58,34 @@ def test_me_endpoint_success(client, auth_headers):
 def test_me_endpoint_unauthorized(client):
     response = client.get('/api/auth/me')
     assert response.status_code == 401 # Missing Authorization Header
+
+
+def test_register_short_password_rejected(client):
+    response = client.post('/api/auth/register', json={
+        'username': 'shortpw', 'email': 'short@test.com', 'password': 'abc'
+    })
+    assert response.status_code == 400
+    assert 'at least' in response.get_json()['error']
+
+
+def test_register_invalid_email_rejected(client):
+    response = client.post('/api/auth/register', json={
+        'username': 'bademail', 'email': 'not-an-email', 'password': 'password123'
+    })
+    assert response.status_code == 400
+
+
+def test_register_and_login_are_case_insensitive_on_email(client, init_database):
+    dup = client.post('/api/auth/register', json={
+        'username': 'caseuser', 'email': 'TEST@Test.com', 'password': 'password123'
+    })
+    assert dup.status_code == 409  # same address as the seeded test@test.com
+
+    login = client.post('/api/auth/login', json={'email': ' Test@TEST.com ', 'password': 'password123'})
+    assert login.status_code == 200
+
+
+def test_register_and_login_without_json_body_return_400_not_500(client):
+    assert client.post('/api/auth/register').status_code == 400
+    assert client.post('/api/auth/login').status_code == 400
+    assert client.post('/api/auth/login', data='not json', content_type='text/plain').status_code == 400
