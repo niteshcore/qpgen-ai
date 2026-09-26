@@ -191,6 +191,11 @@ def library_stats():
         WHERE p.is_public = :is_public
     """), {'is_public': True}).scalar_one()
 
+    bank = db.session.execute(text("""
+        SELECT COUNT(*) AS questions, COUNT(DISTINCT subject_id) AS subjects
+        FROM questions
+    """)).mappings().one()
+
     by_subject = db.session.execute(text("""
         SELECT
             s.id AS subject_id, s.name AS subject_name, s.code AS subject_code,
@@ -209,5 +214,6 @@ def library_stats():
             'total_marks': overall['total_marks'],
             'total_questions': total_questions,
         },
+        'bank': {'questions': bank['questions'], 'subjects': bank['subjects']},
         'by_subject': [dict(r) for r in by_subject],
     }), 200

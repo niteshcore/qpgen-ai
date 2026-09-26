@@ -1322,22 +1322,22 @@
     </section>
 
     <!-- STATS BAR -->
-    <div class="stats-bar">
+    <div class="stats-bar" id="statsBar">
         <div class="stat-item">
-            <span class="stat-number">1,200+</span>
-            <div class="stat-label">Question Papers Generated</div>
+            <span class="stat-number" data-stat="questions">—</span>
+            <div class="stat-label">Questions in the Bank</div>
         </div>
         <div class="stat-item">
-            <span class="stat-number">8+</span>
+            <span class="stat-number" data-stat="subjects">—</span>
             <div class="stat-label">Subjects Covered</div>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number" data-stat="papers">—</span>
+            <div class="stat-label">Free Papers to Download</div>
         </div>
         <div class="stat-item">
             <span class="stat-number">6</span>
             <div class="stat-label">Bloom's Taxonomy Levels</div>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">&lt;3 min</span>
-            <div class="stat-label">Average Paper Generation Time</div>
         </div>
     </div>
 
@@ -1502,6 +1502,20 @@
 
     <script>
         const API = '/api';
+
+        // Live numbers for the stats bar; rounded down with a "+" so they read as thresholds.
+        (async function loadHomeStats() {
+            try {
+                const d = await (await fetch(`${API}/public/library/stats`)).json();
+                const fmt = (n, step) => n >= step ? `${(Math.floor(n / step) * step).toLocaleString()}+` : String(n);
+                const vals = {
+                    questions: fmt(d.bank.questions, 50),
+                    subjects: String(d.bank.subjects),
+                    papers: fmt(d.overall.total_papers, 5),
+                };
+                document.querySelectorAll('#statsBar [data-stat]').forEach(el => { el.textContent = vals[el.dataset.stat]; });
+            } catch (e) { console.error('Failed to load stats:', e); }
+        })();
 
         function openAuth(t) { document.getElementById('authBox').style.display = 'flex'; setTab(t); }
         function closeAuth() { document.getElementById('authBox').style.display = 'none'; }

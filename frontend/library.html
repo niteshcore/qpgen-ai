@@ -160,7 +160,7 @@
         /* ── STATS STRIP ── */
         .stats-strip {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             margin-bottom: 40px;
         }
@@ -177,6 +177,21 @@
             color: var(--blue);
         }
         .stat-box .lbl { font-size: 0.8em; color: var(--text-muted); margin-top: 2px; }
+
+        /* ── CREATE YOUR OWN CTA ── */
+        .create-cta {
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
+            background: linear-gradient(135deg, var(--blue) 0%, #1d4ed8 100%);
+            color: white; border-radius: var(--radius);
+            padding: 32px 36px; margin-bottom: 40px;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+        }
+        .create-cta h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.5em; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+        .create-cta p { opacity: 0.9; max-width: 520px; }
+        .create-cta a {
+            background: white; color: var(--blue); font-weight: 700; text-decoration: none;
+            padding: 12px 22px; border-radius: 10px; white-space: nowrap;
+        }
 
         /* ── FILTER BAR ── */
         .filter-bar {
@@ -290,7 +305,8 @@
             header { padding: 0 20px; }
             nav .nav-link { display: none; }
             main { padding: 40px 20px 80px; }
-            .stats-strip { grid-template-columns: repeat(2, 1fr); }
+            .stats-strip { grid-template-columns: repeat(3, 1fr); }
+            .create-cta { flex-direction: column; align-items: flex-start; }
             .filter-bar { grid-template-columns: 1fr 1fr; }
             .paper-grid { grid-template-columns: 1fr; }
         }
@@ -324,7 +340,14 @@
             <div class="stat-box"><div class="num">—</div><div class="lbl">Papers</div></div>
             <div class="stat-box"><div class="num">—</div><div class="lbl">Subjects</div></div>
             <div class="stat-box"><div class="num">—</div><div class="lbl">Questions</div></div>
-            <div class="stat-box"><div class="num">—</div><div class="lbl">Total Marks</div></div>
+        </div>
+
+        <div class="create-cta">
+            <div>
+                <h2>Create your own question paper.</h2>
+                <p>Pick the subject, marks, difficulty and question types you want, or upload your own course material. Your paper is ready to download in seconds.</p>
+            </div>
+            <a href="#" id="ctaLink">Create your paper →</a>
         </div>
 
         <div class="filter-bar">
@@ -370,8 +393,10 @@
             const link = document.getElementById('navAuthLink');
             link.textContent = 'Dashboard →';
             link.href = 'dashboard.html';
+            document.getElementById('ctaLink').href = 'generate.html';
         } else {
             document.getElementById('navAuthLink').href = 'index.html';
+            document.getElementById('ctaLink').href = 'index.html';
         }
 
         // Rounds down to the nearest `step` and appends "+" once the count
@@ -388,7 +413,6 @@
                 boxes[0].textContent = roundedCount(d.overall.total_papers, 10);
                 boxes[1].textContent = roundedCount(d.overall.total_subjects, 10);
                 boxes[2].textContent = roundedCount(d.overall.total_questions, 100);
-                boxes[3].textContent = roundedCount(d.overall.total_marks, 100);
             } catch (e) { console.error('Failed to load stats:', e); }
         }
 
