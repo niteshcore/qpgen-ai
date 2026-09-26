@@ -31,6 +31,12 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = db_url
     SQLALCHEMY_ECHO = False
 
+    # Refuse to boot in production with the well-known dev fallbacks: anyone
+    # could then forge login tokens. (Only runs when this class is loaded, i.e.
+    # for the 'production' config, never for local dev or tests.)
+    if Config.SECRET_KEY == 'fallback-secret-key' or Config.JWT_SECRET_KEY == 'fallback-jwt-key':
+        raise RuntimeError('SECRET_KEY and JWT_SECRET_KEY must be set in production.')
+
     # Supabase (and most managed Postgres) silently drops idle connections.
     # Without pre_ping, the first query after any idle gap raises
     # "server closed the connection unexpectedly" instead of just reconnecting.

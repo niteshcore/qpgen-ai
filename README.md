@@ -60,7 +60,7 @@
 | Auth | Flask-JWT-Extended, bcrypt, custom RBAC |
 | Documents | ReportLab (PDF export), pypdf (PDF ingestion), pandas/openpyxl (bulk upload) |
 | Frontend | Vanilla HTML, CSS and ES6+ JavaScript (no framework) |
-| Deploy / CI | Vercel (serverless Flask + static frontend), GitHub Actions |
+| Deploy / CI | Render (gunicorn), GitHub Actions |
 
 ## 🚀 Getting Started
 
@@ -115,13 +115,22 @@ cd backend && pytest tests/ -v
 ```
 The suite (about 66 tests) covers auth, RBAC, audit logging, paper generation, embeddings and RAG.
 
-### Deployment
-`vercel.json` routes `/api/*` to the Flask app (`api/index.py`) and serves `frontend/` as static files. Set `DATABASE_URL`, `GOOGLE_API_KEY`, `SECRET_KEY` and `JWT_SECRET_KEY` in the Vercel project settings.
+### Deployment (Render)
+The Flask app serves the API and the static frontend from one process, so a single Render web service is enough. [render.yaml](render.yaml) describes it.
+
+1. Push the repo to GitHub.
+2. In Render: **New → Blueprint**, pick the repo. It reads `render.yaml`.
+3. Fill in the two secrets it asks for: `DATABASE_URL` (Supabase) and `GOOGLE_API_KEY`. `SECRET_KEY` and `JWT_SECRET_KEY` are generated for you, and the app refuses to start in production without them.
+4. Use Supabase's **Session pooler** connection string (Project Settings → Database → Connection string), not the direct `db.<ref>.supabase.co` one: the direct host is IPv6-only and Render can't reach it.
+5. Open `https://<service>.onrender.com/api/health` to confirm it is up.
+
+Notes: the free plan sleeps after ~15 minutes idle (first request afterwards takes about 30 seconds), and the start command runs `gunicorn wsgi:app` from `backend/`. Background embedding works on Render because it is a normal long-running server.
 
 ## 📂 Project Structure
 
 ```text
-├── api/index.py               # Vercel serverless entry point
+├── render.yaml                # Render deployment blueprint
+├── api/index.py               # Vercel serverless entry point (alternative)
 ├── backend/
 │   ├── app/
 │   │   ├── models/            # user, role, permission, question, paper, document, audit_log, ...
@@ -133,6 +142,7 @@ The suite (about 66 tests) covers auth, RBAC, audit logging, paper generation, e
 │   ├── tests/                 # pytest suite
 │   ├── seed_*.py              # question / subject / sample-paper seeders
 │   ├── backfill_embeddings.py
+│   ├── wsgi.py                # production entry point (gunicorn)
 │   └── run.py                 # local entry point
 ├── frontend/
 │   ├── index.html             # landing + login/register
