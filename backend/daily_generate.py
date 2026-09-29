@@ -25,6 +25,7 @@ import argparse
 import logging
 import os
 import sys
+import time
 from datetime import date
 
 from app import create_app
@@ -221,7 +222,13 @@ def main():
         logger.info('Plan for %s (%d subject(s)):', today, len(plan))
 
         failures = 0
-        for subject, topic, shape in plan:
+        quota_hit = False
+        for i, (subject, topic, shape) in enumerate(plan):
+            if i > 0 and not args.dry_run:
+                # Free-tier Gemini allows 5 requests/minute; spread calls out so back-to-back
+                # subjects don't land in the same window (ai_service still backs off on its own
+                # if a call gets rate-limited anyway — this just makes hitting that less likely).
+                time.sleep(20)
             try:
                 generate_one(ai, admin, subject, topic, shape, today, args.dry_run)
             except Exception as e:
@@ -230,11 +237,16 @@ def main():
                 logger.error('  failed: %s', e)
                 # A quota/rate-limit error will hit every remaining call too: stop instead of hammering the API.
                 if any(word in str(e).lower() for word in ('quota', 'rate', '429', 'exhausted')):
+                    quota_hit = True
                     logger.error('Looks like the Gemini quota; stopping for today.')
                     break
 
         logger.info('Done. %d failure(s).', failures)
-        sys.exit(1 if failures and not args.dry_run else 0)
+        # A quota bump is expected on the free tier, not a real bug — don't fail the scheduled
+        # job (and its "Actions failed" email) over something that fixes itself tomorrow.
+        # Any other failure (bad response, bug, etc.) still exits non-zero so it gets noticed.
+        real_failures = failures - (1 if quota_hit else 0)
+        sys.exit(1 if real_failures > 0 and not args.dry_run else 0)
 
 
 if __name__ == '__main__':

@@ -90,3 +90,21 @@ def test_dry_run_writes_nothing(app, init_database):
     ai = FakeAI(['q'])
     dg.generate_one(ai, admin, subject, 'Topic E', dg.PAPER_SHAPES[0], date.today(), dry_run=True)
     assert ai.calls == 0 and Paper.query.count() == 0
+
+
+def test_generate_one_exception_stops_the_run_but_not_the_job(app, init_database, monkeypatch):
+    """A quota error during generate_one should surface to main()'s except-block, which treats
+    it as expected rather than a real failure (see daily_generate.py's exit-code logic)."""
+    from app.services import embedding_service
+    from tests.conftest import FakeEmbedder
+    embedding_service.set_embedder(FakeEmbedder())
+    admin, subject = _admin_and_subject(init_database)
+
+    class QuotaExceeded(FakeAI):
+        def generate_questions_batch(self, subject_name, topic, distribution):
+            raise ValueError('AI generation failed after 3 attempts. Last error: 429 You exceeded your current quota')
+
+    import pytest
+    with pytest.raises(ValueError, match='quota'):
+        dg.generate_one(QuotaExceeded([]), admin, subject, 'Topic Q', dg.PAPER_SHAPES[0], date.today(), dry_run=False)
+    assert Paper.query.count() == 0  # nothing half-written

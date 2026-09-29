@@ -2,6 +2,27 @@ import google.generativeai as genai
 import json
 import os
 import re
+import time
+
+_RETRY_DELAY_RE = re.compile(r'retry_delay\s*\{\s*seconds:\s*(\d+)', re.IGNORECASE)
+
+
+def _is_rate_limited(error):
+    text = str(error)
+    return '429' in text or 'quota' in text.lower() or 'rate limit' in text.lower()
+
+
+def _retry_wait_seconds(error, attempt, cap=40):
+    """How long to sleep before the next attempt. Honours Google's own
+    retry_delay when the error carries one (rate limits do); otherwise a
+    short exponential backoff for transient/other errors."""
+    match = _RETRY_DELAY_RE.search(str(error))
+    if match:
+        return min(int(match.group(1)) + 1, cap)  # +1s cushion past the exact boundary
+    if _is_rate_limited(error):
+        return cap  # no explicit delay given — free tier's window is short, so wait it out
+    return min(2 ** attempt, cap)
+
 
 class AIService:
     def __init__(self, api_key=None):
@@ -66,6 +87,13 @@ class AIService:
         Wraps self.model.generate_content() with retry logic and temperature
         control.  Uses the SAME prompt passed in — no modification.
         Raises the last encountered exception if all attempts are exhausted.
+
+        On a 429 (rate limit), Gemini's free tier is 5 requests/minute — an
+        immediate retry just hits the same limit again. Google's error tells
+        us how long to wait (`retry_delay { seconds: N }`); we sleep that
+        long, or fall back to a fixed backoff if that field isn't present.
+        Non-rate-limit failures back off more gently since they aren't
+        quota-related.
         """
         temperature = self._get_temperature(difficulty)
         generation_config = genai.types.GenerationConfig(temperature=temperature)
@@ -84,6 +112,9 @@ class AIService:
             except Exception as e:
                 last_error = e
                 print(f"AI call attempt {attempt}/{max_attempts} failed: {e}")
+
+            if attempt < max_attempts:
+                time.sleep(_retry_wait_seconds(last_error, attempt))
 
         # All retries exhausted — surface a clear structured error
         raise ValueError(
